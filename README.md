@@ -45,8 +45,14 @@ python3 tools/build_pack.py --res 2048   # نسخه اولترا (عکاسی)
 ├── src_textures/           ← تکسچرهای خام تولیدشده با AI
 ├── tools/build_pack.py     ← اسکریپت خودکارساز کامل
 ├── docs/
-│   ├── midjourney-prompts.md   ← ۱۰ پرامپت مهندسی‌شده
-│   └── shader-guide.md         ← راهنمای شیدر PvP
+│   ├── midjourney-prompts.md   ← ۱۰ پرامپت پایه
+│   ├── upgraded-prompts.json   ← ۱۰ پرامپت ارتقایافته v3 (+negative)
+│   ├── expansion-prompts.md    ← ۱۶ پرامپت تکمیلی (ماب‌ها/۱.۲۱/سیمرغ)
+│   ├── audit-report.md         ← گزارش ممیزی QA کامل
+│   ├── missing-assets.md       ← چک‌لیست شکاف دارایی‌ها
+│   ├── qa-metrics.md           ← سنجه‌های خودکار Seam/PBR هر بیلد
+│   ├── shader-guide.md         ← راهنمای عمومی شیدر PvP
+│   └── shader-config.md        ← کانفیگ آماده SEUS PTGI / Kappa
 ├── vanilla/                ← فایل‌های مرجع 1.20.1 (پایه بازطراحی HUD)
 └── release/                ← ZIP نهایی
 ```
