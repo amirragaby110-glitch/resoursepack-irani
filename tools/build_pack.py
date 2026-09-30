@@ -1218,7 +1218,70 @@ V7_SPECIAL = {
     "entity/spider/spider": dict(sat=0.9, val=0.92),
     "misc/enchanted_glint_item": dict(tint=(64, 224, 208)),      # جلای فیروزه
     "misc/enchanted_glint_entity": dict(tint=(64, 224, 208)),
+    # ---- [v10] هویت ایرانی پررنگ برای موب‌ها و اشیای شاخص ----
+    "entity/villager": dict(hue=0.02, sat=1.2, val=1.04),        # ردای گرم
+    "entity/wandering_trader": dict(hue=0.45, sat=1.25),         # ردای فیروزه
+    "entity/iron_golem/iron_golem": dict(sat=1.15, val=1.05),
+    "entity/chest/": dict(hue=0.02, sat=1.3, val=0.95),          # صندوق خاتم
+    "entity/boat/": dict(hue=0.01, sat=1.25, val=0.92),          # قایق گردو
+    "entity/bed/": dict(sat=1.25, val=1.02),                     # رخت فرش
+    "entity/horse/": dict(sat=1.15, val=1.02),                   # اسب کاسپین
+    "entity/wolf/": dict(sat=1.1),
+    "entity/cat/": dict(sat=1.12, val=1.04),                     # گربه ایرانی
+    "entity/bee/bee": dict(sat=1.3, val=1.06),                   # زنبور طلایی
+    "entity/axolotl/": dict(hue=0.5, sat=1.1),                   # فیروزه‌ای
+    "entity/allay/": dict(tint=(90, 220, 205)),
+    "entity/guardian": dict(hue=0.03, sat=1.2),
+    "entity/warden/": dict(sat=1.2),
+    "entity/piglin/": dict(sat=1.25, val=1.04),                  # طلای بیشتر
+    "entity/drowned/": dict(hue=0.04, sat=1.1),
+    "entity/witch": dict(sat=1.15),
+    "entity/evoker": dict(sat=1.15, val=0.95),
+    "entity/pillager": dict(sat=1.1),
+    "entity/vindicator": dict(sat=1.1),
+    "entity/phantom": dict(hue=0.05, sat=1.15),
+    "entity/enderdragon/dragon": dict(sat=1.15),
+    "entity/shulker/": dict(sat=1.2),
+    "entity/cow/cow": dict(sat=1.12, val=1.02),
+    "entity/pig/pig": dict(sat=1.1, val=1.03),
+    "entity/sheep/sheep_fur": dict(val=1.05),
+    "entity/chicken": dict(sat=1.08, val=1.04),
+    "entity/llama/": dict(sat=1.2),
+    "entity/camel/": dict(sat=1.2, val=1.04),                    # شتر لوت
+    "entity/fox/": dict(sat=1.2),
+    "entity/turtle/big_sea_turtle": dict(hue=0.03, sat=1.15),
+    "entity/bell/bell_body": dict(sat=1.35, val=1.08),           # زنگ طلا
+    "entity/conduit/": dict(hue=0.03, sat=1.2),
+    "entity/end_crystal/": dict(hue=0.5, sat=1.2),
 }
+
+
+# ============================ [v10] تابلوهای نگارگری ایرانی (AI paintings)
+def build_paintings():
+    """۱۰ تابلوی وانیلا => مینیاتور/نگارگری ایرانی. اندازه از فایل وانیلا
+    خوانده و با ضریب ۸ (هر بلاک=128px) ذخیره می‌شود."""
+    src_dir = os.path.join(SRC, "painting")
+    van_dir = os.path.join(VANILLA_TEX, "painting")
+    out_dir = os.path.join(TEX, "painting")
+    if not os.path.isdir(src_dir):
+        print("[v10] هشدار: src_textures/painting نیست — رد شد")
+        return
+    ensure(out_dir)
+    n = 0
+    for f in sorted(os.listdir(src_dir)):
+        if not f.endswith(".png"):
+            continue
+        vp = os.path.join(van_dir, f)
+        if not os.path.exists(vp):
+            continue
+        vw, vh = Image.open(vp).size          # مثلاً 16x32 => نسبت تابلو
+        scale = 8
+        img = Image.open(os.path.join(src_dir, f)).convert("RGB")
+        img = ImageOps.fit(img, (vw * scale, vh * scale), Image.LANCZOS)
+        save_png(grade(enhance_micro(img, 0.3)).convert("RGBA"),
+                 os.path.join(out_dir, f))
+        n += 1
+    print(f"[v10] {n} تابلوی نگارگری ایرانی ساخته شد ✔")
 
 
 def pixel_grade(img, strength=1.0):
@@ -1229,10 +1292,10 @@ def pixel_grade(img, strength=1.0):
     lum = rgb.mean(axis=2, keepdims=True)
     sat_est = float(np.abs(rgb - lum).mean())
     if sat_est > 0.008:   # خاکستری‌های Tint-Safe (علف/برگ وانیلا) دست نمی‌خورند
-        teal = np.array([0.0, 0.055, 0.055], np.float32)
-        gold = np.array([0.06, 0.04, 0.0], np.float32)
+        teal = np.array([0.0, 0.085, 0.085], np.float32)   # [v10] پررنگ‌تر
+        gold = np.array([0.095, 0.062, 0.0], np.float32)
         rgb = rgb + (teal * (1 - lum) + gold * lum) * 0.5 * strength
-        rgb = lum + (rgb - lum) * 1.06          # اشباع +۶٪
+        rgb = lum + (rgb - lum) * 1.10          # اشباع +۱۰٪
     rgb = (rgb - 0.5) * 1.045 + 0.5             # کنتراست +۴.۵٪
     arr[..., :3] = np.clip(rgb * 255.0, 0, 255)
     return Image.fromarray(arr.astype(np.uint8), "RGBA")
@@ -1862,7 +1925,8 @@ def build_lite121():
           f" لو-فایر+توتم+آب زلال — ZIP {size:.1f} MB ✔")
 
 
-
+# ================================================================ اجرا
+def main():
     ap = argparse.ArgumentParser(description="Persian Legacy PvP pack builder")
     # [v2/QA] پیش‌فرض 512 = تعادل طلایی PvP (۳۲ برابر وانیلا، بدون فشار رم)
     # برای نسخه نمایشی/عکاسی: --res 1024 یا --res 2048
@@ -1894,12 +1958,13 @@ def build_lite121():
         ("زره و پروژکتایل", build_armor, ()),
         ("بچ 8K (v6)", build_v6, ()),
         ("موتور رویه‌ای", procedural_fill, ()),
+        ("نگارگری ایرانی (v10)", build_paintings, ()),
         ("پارسی‌سازی سراسری (v7)", persianize_vanilla, ()),
         ("هات‌بار v9", build_hotbar_v9, ()),
-        ("PvP Lite 1.21.11 (v8)", build_lite121, ()),
         ("زبان فارسی", write_lang, ()),
         ("محیط/آسمان", build_environment, ()),
         ("لوگو", build_logo, ()),
+        ("PvP Lite 1.21.11 (v8)", build_lite121, ()),
         ("اعتبارسنجی", validate_pack, ()),
         ("ممیزی تکسچر", audit_textures, ()),
         ("بهینه‌سازی", optimize_all, ()),
