@@ -7,9 +7,10 @@
 |---|---|
 | stone / cobblestone / stone_bricks / bricks / oak_planks / sand / dirt / blue_glazed_terracotta / gold_block / diamond_block | ✅ + PBR |
 | deepslate ×2، smooth_stone، andesite/diorite/granite، sandstone ×3، cracked/mossy_stone_bricks، planks ×۸ گونه (چری/بامبو/...)، gravel، mud_bricks (کاهگل) | 🟡 مشتق خودکار + PBR |
-| grass_block top (tint-safe خاکستری) + side (کامپوزیت خودکار) | ✅ v3.1 |
+| grass_block top/side | ✅ v3.1 |
+| oak_leaves (هیرکانی tint-safe) + ۶ گونه مشتق، oak_log + ۳ گونه، snow/powder_snow، شقایق، لاله، علف، گندم ۸ مرحله | ✅ v4 |
 | water still/flow — ۱۶ فریم متحرک tint-safe + mcmeta | ✅ v3.2 |
-| lava (استریپ انیمیشن) | 🔴 |
+| lava still/flow — ۱۶ فریم متحرک + تپش نور | ✅ v4 |
 | diamond_ore (فیروزه نیشابور) / gold_ore (زر ساسانی) | ✅ v3.1 |
 | iron_ore (هماتیت) | ✅ v3.2 |
 | copper_ore, redstone_ore, lapis_ore, coal_ore | 🔴 |
@@ -24,7 +25,9 @@
 | netherite/golden/stone/wooden_sword | 🟡 مشتق رنگی از شمشیرهای اصلی |
 | arrow (تیر پارتی), shield (سپر فروهر + مدل تخت 2D PvP), totem (فروهر), mace (گرز رستم ۱.۲۱ + مدل) | ✅ v3.1 |
 | تبرزین‌ها (۶ تبر + مدل PvP)، زنبورک (+فریم‌های کشش/بارگذاری)، قلاب ماهیگیری (+cast)، فیروزه تراش، زمرد پنجشیر | ✅ v3.2 |
-| trident, snowball, splash potions | 🔴 |
+| trident → نیزه‌ی گارد جاویدان (آیکون + مدل تخت 2D + بازرنگ برنزی UV پرتابی) | ✅ v4 |
+| wind_charge (گوی بادگیر + ۸ فریم پارتیکل گاست) — ۱.۲۱ | ✅ v4 |
+| snowball, splash potions | 🔴 |
 | زره‌ها (item + `models/armor/*_layer_1/2`) + trim ها | 🔴 |
 | elytra (بال سیمرغ) | 🔴 |
 

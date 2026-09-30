@@ -1,0 +1,47 @@
+{
+  "deliverable": "World_Overhaul_Prompt_Pack",
+  "version": "v4",
+  "usage": "Midjourney v6: append params. Blocks need --tile. SDXL: use negative_prompt.",
+  "prompts": [
+    {
+      "id": "ENV-1",
+      "category": "Terrain & Biomes",
+      "targets": ["block/snow.png", "block/stone.png", "block/sand.png", "block/dirt.png"],
+      "prompt": "flawless photorealistic terrain material scan set of ancient Iran: pristine Alborz mountain snow with wind-sculpted sastrugi micro-ridges and sparkling ice crystals, golden rippled Lut desert sand, weathered Persepolis limestone with faint eroded Achaemenid reliefs, rich Alborz foothill soil with tiny pebbles, flat top-down orthographic, even diffuse lighting, seamless tileable, 1024x1024 PBR albedo, natural muted palette",
+      "negative_prompt": "plastic look, over-smoothing, baked shadows, visible seams, perspective, vignette, footprints, oversaturation",
+      "params": "--v 6 --style raw --tile --ar 1:1"
+    },
+    {
+      "id": "ENV-2",
+      "category": "Flora & Foliage",
+      "targets": ["block/oak_leaves.png", "block/poppy.png", "block/red_tulip.png", "block/wheat_stage7.png"],
+      "prompt": "photorealistic Hyrcanian forest canopy of tightly layered oak and hornbeam leaves with dew micro-droplets seamless tileable; plus isolated Persian garden flower sprites on flat pure magenta FF00FF: wild red poppy, crimson Persian tulip, ripe golden wheat stalks of the Iranian plateau, full plants, crisp silhouettes, flat frontal, 1024x1024",
+      "negative_prompt": "plastic look, blurry foliage, sky gaps, soil, shadows on background, background gradient",
+      "params": "--v 6 --style raw --ar 1:1 (leaves: add --tile)"
+    },
+    {
+      "id": "ENV-3",
+      "category": "Liquids",
+      "targets": ["block/water_still.png (tint-safe grey)", "block/lava_still.png"],
+      "prompt": "photorealistic calm qanat water surface with gentle caustic ripples in neutral silver-grey tintable tone, seamless tileable; and molten Damavand volcano lava with glowing orange-gold rivers between dark basalt crust plates, intense crack glow, seamless tileable, flat top-down, 1024x1024, even exposure for 16-frame animation source",
+      "negative_prompt": "color cast on water, object reflections, smoke, perspective, blown highlights",
+      "params": "--v 6 --style raw --tile --ar 1:1"
+    },
+    {
+      "id": "ENV-4",
+      "category": "Atmosphere / Skybox",
+      "targets": ["optifine/sky/world0/sky1.png", "sky2.png", "environment/sun.png", "environment/moon_phases.png"],
+      "prompt": "flawless panoramic skies of the Iranian plateau: daytime deep turquoise zenith to warm amber desert haze with sparse elongated cirrus, and night deep lapis-indigo with dense sharp starfield, glowing milky way and faint turquoise nebula wisps; plus golden Mithra sun disc with engraved eight-pointed halo and silver-ivory full moon with thin turquoise-gold rim on pure black, even brightness all directions, 2048x2048 game skybox quality",
+      "negative_prompt": "ground, horizon objects, lens flare, vignette, banding, text, birds",
+      "params": "--v 6 --style raw --ar 3:2 (sun/moon: --ar 1:1)"
+    },
+    {
+      "id": "ENV-5",
+      "category": "Weather & Particles",
+      "targets": ["environment/rain.png", "environment/snow.png", "particle/gust_*.png"],
+      "prompt": "vertical seamless strip of fine desert rain streaks with subtle turquoise glint, and soft Alborz snowflakes with crystalline sparkle, thin translucent particles on transparent background, high contrast against both bright and dark scenes, minimal density for competitive PvP visibility, 8k",
+      "negative_prompt": "dense opaque sheets, fog wash, blur blobs, screen-obscuring clutter",
+      "params": "--v 6 --style raw --ar 1:4"
+    }
+  ]
+}

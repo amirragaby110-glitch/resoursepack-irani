@@ -15,9 +15,12 @@
 | grass_block_top | 3.80 ✅ | 127 | 7 |
 | iron_ore | 2.53 ✅ | 127 | 76 |
 | netherrack | 2.34 ✅ | 127 | 34 |
+| oak_leaves | 3.46 ✅ | 127 | 40 |
+| oak_log | 2.46 ✅ | 127 | 23 |
 | oak_planks | 2.55 ✅ | 127 | 103 |
 | obsidian | 2.32 ✅ | 127 | 203 |
 | sand | 2.49 ✅ | 127 | 33 |
+| snow | 2.36 ✅ | 127 | 136 |
 | stone | 2.52 ✅ | 127 | 55 |
 | stone_bricks | 2.34 ✅ | 127 | 62 |
 

@@ -78,7 +78,18 @@ BLOCK_MATERIALS = {
     "obsidian":               dict(smooth=0.82, f0=46,  emiss=0.00),
     "netherrack":             dict(smooth=0.18, f0=18,  emiss=0.02),
     "grass_block_top":        dict(smooth=0.10, f0=16,  emiss=0.00),
+    # ---- [v4] Total World Overhaul ----
+    "snow":                   dict(smooth=0.55, f0=22,  emiss=0.00),
+    "oak_log":                dict(smooth=0.15, f0=18,  emiss=0.00),
+    "oak_leaves":             dict(smooth=0.25, f0=20,  emiss=0.00),
 }
+
+# [v4] تکسچرهایی که باید خاکستری Tint-Safe باشند (رنگ از colormap بایوم)
+TINT_SAFE = {"grass_block_top", "oak_leaves"}
+
+# [v4] گیاهان کراس‌اسپرایت (کلید ماژنتا => پس‌زمینه شفاف)
+PLANTS = ["poppy", "red_tulip", "wheat_stage7", "short_grass"]
+PLANT_TINT_SAFE = {"short_grass"}  # علف با رنگ بایوم tint می‌شود
 
 ITEM_FILES = ["diamond_sword", "iron_sword", "netherite_sword",
               "bow", "golden_apple", "ender_pearl",
@@ -86,10 +97,15 @@ ITEM_FILES = ["diamond_sword", "iron_sword", "netherite_sword",
               "shield", "totem_of_undying", "arrow", "mace",
               # [v3.2] سلاح‌های ثانویه و جواهرات
               "diamond_axe", "iron_axe", "fishing_rod", "crossbow_standby",
-              "diamond", "emerald"]
+              "diamond", "emerald",
+              # [v4] آیتم‌های رزمی ۱.۲۱
+              "wind_charge", "trident"]
 
 # رنگ کلید کروما برای هر آیتم (پیش‌فرض سبز؛ جواهر سبز => ماژنتا!)
-ITEM_KEY = {"emerald": "magenta"}
+ITEM_KEY = {"emerald": "magenta", "wind_charge": "magenta"}
+
+# [v4-QA] برش پیش‌پردازش: اگر مدل AI چند نمونه از آیتم بسازد
+ITEM_CROP = {"wind_charge": "left_half"}
 
 # چرخش اسپرایت سلاح‌ها برای هم‌راستایی با محور مورب وانیلی (لبه به بالا-راست)
 # [رفع باگ ممیزی #5: خروجی AI افقی بود => در دست بازیکن کج دیده می‌شد]
@@ -125,6 +141,18 @@ DERIVED_BLOCKS = {
     "mangrove_planks":      ("oak_planks",   dict(force_hue=0.99, sat=0.65, val=0.70)),
     "gravel":               ("cobblestone",  dict(sat=0.35, val=0.80)),
     "mud_bricks":           ("bricks",       dict(sat=0.45, val=0.75)),  # کاهگل!
+    # [v4] جهان‌سازی: تنه‌ها و برگ‌ها (برگ‌ها tint-safe اند => کپی امن)
+    "spruce_log":           ("oak_log",      dict(sat=0.70, val=0.55)),
+    "birch_log":            ("oak_log",      dict(sat=0.25, val=1.35)),
+    "dark_oak_log":         ("oak_log",      dict(val=0.42)),
+    "oak_log_top":          ("oak_planks",   dict(sat=0.80, val=0.82)),
+    "spruce_leaves":        ("oak_leaves",   dict()),
+    "birch_leaves":         ("oak_leaves",   dict(val=1.10)),
+    "jungle_leaves":        ("oak_leaves",   dict()),
+    "acacia_leaves":        ("oak_leaves",   dict()),
+    "dark_oak_leaves":      ("oak_leaves",   dict(val=0.90)),
+    "mangrove_leaves":      ("oak_leaves",   dict()),
+    "powder_snow":          ("snow",         dict(val=0.96)),
 }
 DERIVED_ITEMS = {
     "netherite_sword": ("diamond_sword", dict(sat=0.35, val=0.50)),
@@ -326,8 +354,8 @@ def build_blocks(res):
         img = ImageOps.fit(img, (res, res), Image.LANCZOS)
         img = make_seamless(img)
         img = grade(enhance_micro(img))   # [v3] میکرو-جزئیات + گرید سینمایی
-        if name == "grass_block_top":
-            # [v3.1] Tint-Safe: خاکستری خالص => رنگ سبز از colormap بایوم
+        if name in TINT_SAFE:
+            # [v4] Tint-Safe: خاکستری خالص => رنگ از colormap بایوم
             # (هیرکانی/لوت/البرز) در خود بازی اعمال می‌شود، مثل وانیلا
             l = np.asarray(img.convert("L"), np.float32)
             l = np.clip(l * (150.0 / max(l.mean(), 1.0)), 0, 255).astype(np.uint8)
@@ -342,6 +370,28 @@ def build_blocks(res):
     if os.path.exists(gp):
         g = chroma_key(Image.open(gp)).resize((res, res), Image.LANCZOS)
         save_png(g, os.path.join(out_dir, "glass.png"))
+        n += 1
+    # [v4] گیاهان کراس‌اسپرایت: کلید ماژنتا + Tint-Safe برای علف
+    for plant in PLANTS:
+        p = os.path.join(src_dir, plant + ".png")
+        if not os.path.exists(p):
+            continue
+        img = chroma_key(Image.open(p), key="magenta")
+        bbox = img.getbbox()
+        if bbox:
+            img = img.crop(bbox)
+        side = max(img.size)
+        canvas = Image.new("RGBA", (side, side), (0, 0, 0, 0))
+        canvas.paste(img, ((side - img.width) // 2, side - img.height), img)
+        canvas = canvas.resize((res, res), Image.LANCZOS)
+        if plant in PLANT_TINT_SAFE:
+            arr = np.asarray(canvas)
+            l = np.asarray(canvas.convert("L"), np.float32)
+            l = np.clip(l * 1.35, 0, 255).astype(np.uint8)
+            canvas = Image.fromarray(np.dstack([l, l, l, arr[..., 3]]), "RGBA")
+        save_png(canvas, os.path.join(out_dir, plant + ".png"))
+        if plant == "short_grass":   # سازگاری 1.20.x (نام قدیمی grass)
+            save_png(canvas, os.path.join(out_dir, "grass.png"))
         n += 1
     print(f"[3/9] {n} بلاک + نقشه‌های PBR ساخته شد ✔ (رزولوشن {res})")
 
@@ -381,6 +431,8 @@ def build_items(res_item):
         if not os.path.exists(p):
             continue
         img = chroma_key(Image.open(p), key=ITEM_KEY.get(name, "green"))
+        if ITEM_CROP.get(name) == "left_half":   # [v4-QA] حذف نمونه تکراری
+            img = img.crop((0, 0, img.width // 2, img.height))
         # [v2] هم‌راستاسازی مورب سلاح‌ها با گرفتن وانیلی (رفع باگ #5)
         if name in ITEM_ROTATE:
             img = img.rotate(ITEM_ROTATE[name], expand=True,
@@ -554,6 +606,24 @@ def build_particles():
                          TURQUOISE[2] * (1 - t) + GOLD[2] * t]) / 255.0
         arr[..., :3] = np.clip(arr[..., :3] * tint + 40 * (arr[..., 3:4] / 255.0), 0, 255)
         save_png(Image.fromarray(arr.astype(np.uint8)), os.path.join(out, f"sweep_{i}.png"))
+    # [v4] پارتیکل‌های گاست ویند چارج (1.21): گرداب فیروزه‌ای ۸ فریمی
+    #  کوچک و پرکنتراست => عمر بصری کوتاه، بدون افت FPS در PvP
+    for i in range(8):
+        size = 32
+        img = Image.new("RGBA", (size, size), (0, 0, 0, 0))
+        d = ImageDraw.Draw(img)
+        prog = i / 7.0
+        c = size / 2
+        for arm in range(3):     # سه بازوی مارپیچ بادگیر
+            a0 = prog * 360 + arm * 120
+            r0 = 4 + prog * 10
+            d.arc([c - r0 - 4, c - r0 - 4, c + r0 + 4, c + r0 + 4],
+                  start=a0, end=a0 + 100,
+                  fill=(TURQUOISE[0], TURQUOISE[1], TURQUOISE[2],
+                        int(240 * (1 - prog * 0.6))), width=3)
+        d.ellipse([c - 3, c - 3, c + 3, c + 3],
+                  fill=IVORY + (int(255 * (1 - prog)),))
+        save_png(img, os.path.join(out, f"gust_{i}.png"))
     # گلینت انچنت فیروزه‌ای (به‌جای بنفش وانیلی)
     for name in ["enchanted_glint_item.png", "enchanted_glint_entity.png"]:
         p = os.path.join(VANILLA, "misc", name)
@@ -645,6 +715,53 @@ def build_pvp_models():
                  "display": display}
         with open(os.path.join(mdl_dir, axe + ".json"), "w") as f:
             json.dump(model, f, indent=2)
+
+    # [v4] گوی بادگیر (Wind Charge 1.21) — مدل تختِ generated
+    wind = {"_comment": "Persian badgir wind orb — flat, crosshair-safe",
+            "parent": "minecraft:item/generated",
+            "textures": {"layer0": "minecraft:item/wind_charge"},
+            "display": {
+                "firstperson_righthand": {"rotation": [0, 0, 0],
+                                          "translation": [1.0, 2.5, 0],
+                                          "scale": [0.55, 0.55, 0.55]},
+                "firstperson_lefthand": {"rotation": [0, 0, 0],
+                                         "translation": [1.0, 2.5, 0],
+                                         "scale": [0.55, 0.55, 0.55]},
+                "thirdperson_righthand": {"translation": [0, 2.5, 0],
+                                          "scale": [0.6, 0.6, 0.6]},
+                "thirdperson_lefthand": {"translation": [0, 2.5, 0],
+                                         "scale": [0.6, 0.6, 0.6]},
+                "gui": {"scale": [1, 1, 1]},
+                "ground": {"scale": [0.4, 0.4, 0.4]}}}
+    with open(os.path.join(mdl_dir, "wind_charge.json"), "w") as f:
+        json.dump(wind, f, indent=2)
+
+    # [v4] نیزه جاویدان (Trident->Spear) — مدل تخت دوبعدی در دست
+    # (وانیلا builtin/entity است و وسط-پایین صفحه را می‌گیرد؛ مدل تخت
+    #  streamlined = مرکز دید کاملاً باز. پروژکتایل پرتابی از UV بازرنگ‌شده
+    #  entity/trident.png استفاده می‌کند و دست‌نخورده streamlined می‌ماند.)
+    spear = {"_comment": "Persian Immortal spear — flat 2D PvP model",
+             "parent": "minecraft:item/handheld",
+             "textures": {"layer0": "minecraft:item/trident"},
+             "display": {
+                 "thirdperson_righthand": {"rotation": [0, -90, 65],
+                                           "translation": [0, 4.0, 0.5],
+                                           "scale": [0.90, 0.90, 0.90]},
+                 "thirdperson_lefthand": {"rotation": [0, 90, -65],
+                                          "translation": [0, 4.0, 0.5],
+                                          "scale": [0.90, 0.90, 0.90]},
+                 "firstperson_righthand": {"rotation": [0, -90, 25],
+                                           "translation": [2.0, 3.5, 1.0],
+                                           "scale": [0.60, 0.60, 0.60]},
+                 "firstperson_lefthand": {"rotation": [0, 90, -25],
+                                          "translation": [2.0, 3.5, 1.0],
+                                          "scale": [0.60, 0.60, 0.60]},
+                 "gui": {"scale": [1, 1, 1]},
+                 "ground": {"translation": [0, 2, 0],
+                            "scale": [0.5, 0.5, 0.5]},
+                 "fixed": {"rotation": [0, 180, 0], "scale": [1, 1, 1]}}}
+    with open(os.path.join(mdl_dir, "trident.json"), "w") as f:
+        json.dump(spear, f, indent=2)
 
     # [v3.1] سپر دوبعدی PvP: مدل ۳بعدی وانیلی نیمِ صفحه را کور می‌کند؛
     # مدل تختِ کوچک => دید باز + سیلوئت خوانا (تکنیک رایج پک‌های PvP)
@@ -853,6 +970,29 @@ def build_fallbacks():
         save_png(adjust(loaded, hue=-0.06, sat=1.3),
                  os.path.join(itm_dir, "crossbow_firework.png"))
         n += 3
+    # [v4] مراحل رشد گندم: فشردگی عمودی تدریجی از خوشه رسیده
+    wp = os.path.join(blk_dir, "wheat_stage7.png")
+    if os.path.exists(wp):
+        wheat = Image.open(wp).convert("RGBA")
+        wd = wheat.width
+        for st in range(7):
+            hfrac = 0.25 + 0.75 * st / 7.0
+            green = 0.55 - st * 0.07     # مراحل اولیه سبزترند
+            frame = Image.new("RGBA", (wd, wd), (0, 0, 0, 0))
+            sq = wheat.resize((wd, max(1, int(wd * hfrac))), Image.LANCZOS)
+            sq = adjust(sq, hue=green * 0.18, sat=1.0 + green * 0.4)
+            frame.paste(sq, (0, wd - sq.height), sq)
+            save_png(frame, os.path.join(blk_dir, f"wheat_stage{st}.png"))
+            n += 1
+    # [v4] نیزه پرتابی (Entity UV): بازرنگ برنز/طلا روی UV وانیلی
+    # => مدل سه‌بعدی پرتاب‌شده سالم می‌ماند و فقط جنس فلز پارسی می‌شود
+    tv = os.path.join(VANILLA, "entity", "trident.png")
+    if os.path.exists(tv):
+        ent = Image.open(tv).convert("RGBA")
+        ent = ent.resize((ent.width * 8, ent.height * 8), Image.NEAREST)
+        ent = adjust(ent, force_hue=0.10, sat=1.35, val=1.10)  # برنز طلایی
+        save_png(ent, os.path.join(TEX, "entity", "trident.png"))
+        n += 1
     print(f"[8.5] سیستم Fallback: {n} دارایی مشتق‌شده تولید شد ✔")
 
 
@@ -887,7 +1027,33 @@ def build_water():
         with open(os.path.join(TEX, "block", name + ".png.mcmeta"), "w",
                   encoding="utf-8") as fh:
             json.dump({"animation": {"frametime": ft}}, fh)
-    print("[8.5ب] آب قنات متحرک (۱۶ فریم بی‌درز + mcmeta) ساخته شد ✔")
+
+    # [v4] گدازه دماوند: رنگی (بدون tint) + امیسیو از ترک‌های داغ
+    lsrc = os.path.join(SRC, "block", "lava_still.png")
+    if os.path.exists(lsrc):
+        lbase = ImageOps.fit(Image.open(lsrc).convert("RGB"), (res, res),
+                             Image.LANCZOS)
+        larr = np.asarray(lbase, np.float32)
+        lstrip = Image.new("RGBA", (res, res * frames))
+        for f in range(frames):
+            ph = 2 * math.pi * f / frames
+            fr = np.roll(larr, int(res * f / frames), axis=0).copy()
+            for x in xs:
+                fr[:, x] = np.roll(fr[:, x],
+                                   int(4 * math.sin(ph + x * 2 * math.pi / res)),
+                                   axis=0)
+            # تپش نور گدازه (سینوسی ملایم => حس مذاب زنده)
+            fr = np.clip(fr * (1.0 + 0.06 * math.sin(ph)), 0, 255)
+            rgba = np.dstack([fr.astype(np.uint8),
+                              np.full((res, res), 255, np.uint8)])
+            lstrip.paste(Image.fromarray(rgba, "RGBA"), (0, f * res))
+        for name, ft in [("lava_still", 4), ("lava_flow", 3)]:
+            save_png(lstrip, os.path.join(TEX, "block", name + ".png"))
+            with open(os.path.join(TEX, "block", name + ".png.mcmeta"), "w",
+                      encoding="utf-8") as fh:
+                json.dump({"animation": {"frametime": ft, "interpolate": True}},
+                          fh)
+    print("[8.5ب] مایعات متحرک: آب قنات + گدازه دماوند (۱۶ فریم + mcmeta) ✔")
 
 
 # ====================================== [v2] ۸.۶) اعتبارسنجی JSON و ارجاع‌ها
@@ -954,6 +1120,13 @@ def write_lang():
         "item.minecraft.emerald": "زمردِ پنجشیر",
         "block.minecraft.bookshelf": "کتابخانه‌ی نسخ خطی",
         "block.minecraft.end_stone": "سنگِ نیایشگاه کهن",
+        "item.minecraft.wind_charge": "گویِ بادگیر",
+        "item.minecraft.trident": "نیزه‌ی گارد جاویدان",
+        "block.minecraft.poppy": "شقایقِ دشت",
+        "block.minecraft.red_tulip": "لاله‌ی سرخ",
+        "block.minecraft.snow": "برفِ البرز",
+        "block.minecraft.lava": "گدازه‌ی دماوند",
+        "block.minecraft.oak_leaves": "برگِ جنگل هیرکانی",
         "block.minecraft.obsidian": "آبسیدینِ دماوند",
         "block.minecraft.diamond_ore": "رگه‌ی فیروزه‌ی نیشابور",
         "block.minecraft.gold_ore": "رگه‌ی زرِ ساسانی",
@@ -1091,7 +1264,7 @@ def main():
     args = ap.parse_args()
 
     print("═" * 60)
-    print("  PERSIAN LEGACY v3.2 — Persian Photoreal PvP Pack Builder")
+    print("  PERSIAN LEGACY v4 — Persian Photoreal PvP Pack Builder")
     print("═" * 60)
     # [v2] هر مرحله ایزوله اجرا می‌شود؛ خطای یک مرحله بیلد را متوقف نمی‌کند
     steps = [

@@ -1,0 +1,28 @@
+{
+  "deliverable": "Combat_Items_Prompt_Pack",
+  "version": "v4 — 1.21 Combat Integration",
+  "usage": "Chroma-key backgrounds are mandatory: pipeline strips them automatically (green 00FF00, magenta FF00FF for cyan/turquoise items).",
+  "prompts": [
+    {
+      "id": "CMB-1",
+      "item": "mace.png (گرز)",
+      "prompt": "legendary Persian gorz war mace game item icon, brutal yet elegant bull-head bronze mace of Rostam from Shahnameh, fluted head with turquoise and gold inlays, engraved handle with dark leather grip, authentic battle-worn metal micro-scratches and patina, diagonal composition head to top-right, crisp clean silhouette, PvP clean hitbox, high contrast, centered, isolated on flat pure green 00FF00, no shadow, 8k photorealistic — PBR note: generate matching height detail for _n map derivation, fluted ridges must read in normal map",
+      "negative_prompt": "cluttered ornament, glow bleeding, soft edges, extra weapons, 3d ground shadow, oversized spikes beyond silhouette, non-PvP-friendly visual noise",
+      "params": "--v 6 --style raw --ar 1:1"
+    },
+    {
+      "id": "CMB-2",
+      "item": "wind_charge.png (گوی بادگیر)",
+      "prompt": "mystical Persian wind orb game item icon, swirling sphere of luminous turquoise and lapis lazuli wind currents spiraling like a badgir wind-catcher vortex with djinn-smoke elegance, glowing cyan core, thin gold spiral bands, sharp motion streaks fully contained in circular silhouette, crisp high-contrast edges, centered, isolated on flat pure magenta FF00FF, no glow bleeding onto background, 8k photorealistic — PBR note: core pixels above 82% luminance drive the emissive channel",
+      "negative_prompt": "plain blue ball, fuzzy aura, background glow, cluttered debris, long particle trails that would clutter PvP",
+      "params": "--v 6 --style raw --ar 1:1"
+    },
+    {
+      "id": "CMB-3",
+      "item": "trident.png (نیزه جاویدان)",
+      "prompt": "Persian Immortal guard spear game item icon replacing the trident, leaf-shaped polished bronze-gold spearhead engraved with tiny Achaemenid lotus motifs, silver pomegranate counterweight at the butt like the Ten Thousand Immortals, dark hardwood shaft with leather grip wrap, perfectly straight streamlined silhouette for a clean thrown projectile, diagonal head to top-right, crisp edges, high contrast, centered, isolated on flat pure green 00FF00, no shadow, 8k photorealistic",
+      "negative_prompt": "three prongs, forked head, curved shaft, tassels or ribbons obstructing silhouette, cluttered ornament, soft blurry edges",
+      "params": "--v 6 --style raw --ar 1:1"
+    }
+  ]
+}
