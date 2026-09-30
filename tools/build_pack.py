@@ -82,6 +82,9 @@ BLOCK_MATERIALS = {
     "snow":                   dict(smooth=0.55, f0=22,  emiss=0.00),
     "oak_log":                dict(smooth=0.15, f0=18,  emiss=0.00),
     "oak_leaves":             dict(smooth=0.25, f0=20,  emiss=0.00),
+    # ---- [v5] 2-Hour Sprint ----
+    "crafting_table_top":     dict(smooth=0.45, f0=26,  emiss=0.00),
+    "glowstone":              dict(smooth=0.60, f0=30,  emiss=0.85),
 }
 
 # [v4] تکسچرهایی که باید خاکستری Tint-Safe باشند (رنگ از colormap بایوم)
@@ -99,10 +102,18 @@ ITEM_FILES = ["diamond_sword", "iron_sword", "netherite_sword",
               "diamond_axe", "iron_axe", "fishing_rod", "crossbow_standby",
               "diamond", "emerald",
               # [v4] آیتم‌های رزمی ۱.۲۱
-              "wind_charge", "trident"]
+              "wind_charge", "trident",
+              # [v5] باگ‌فیکس اسپرینت: مواد خام + شمش + زره الماسی
+              "raw_iron", "raw_gold", "raw_copper", "iron_ingot",
+              "diamond_helmet", "diamond_chestplate", "diamond_leggings",
+              "diamond_boots"]
 
 # رنگ کلید کروما برای هر آیتم (پیش‌فرض سبز؛ جواهر سبز => ماژنتا!)
-ITEM_KEY = {"emerald": "magenta", "wind_charge": "magenta"}
+ITEM_KEY = {"emerald": "magenta", "wind_charge": "magenta",
+            "raw_iron": "magenta", "raw_gold": "magenta",
+            "raw_copper": "magenta", "iron_ingot": "magenta",
+            "diamond_helmet": "magenta", "diamond_chestplate": "magenta",
+            "diamond_leggings": "magenta", "diamond_boots": "magenta"}
 
 # [v4-QA] برش پیش‌پردازش: اگر مدل AI چند نمونه از آیتم بسازد
 ITEM_CROP = {"wind_charge": "left_half"}
@@ -153,6 +164,43 @@ DERIVED_BLOCKS = {
     "dark_oak_leaves":      ("oak_leaves",   dict(val=0.90)),
     "mangrove_leaves":      ("oak_leaves",   dict()),
     "powder_snow":          ("snow",         dict(val=0.96)),
+    # [v5] خانواده سنگ‌معدن‌ها از رگه فیروزه (باگ #4)
+    "copper_ore":           ("diamond_ore",  dict(force_hue=0.05, sat=0.9)),
+    "redstone_ore":         ("diamond_ore",  dict(force_hue=0.00, sat=1.10)),
+    "lapis_ore":            ("diamond_ore",  dict(force_hue=0.63, sat=1.05)),
+    "emerald_ore":          ("diamond_ore",  dict(force_hue=0.36, sat=1.05)),
+    "coal_ore":             ("diamond_ore",  dict(sat=0.08, val=0.70)),
+    # [v5] بلاک‌های فلزی/گوهری از طلا و فیروزه
+    "iron_block":           ("gold_block",   dict(sat=0.12, val=1.08)),
+    "copper_block":         ("gold_block",   dict(force_hue=0.05, sat=1.15, val=0.92)),
+    "netherite_block":      ("gold_block",   dict(sat=0.18, val=0.35)),
+    "emerald_block":        ("diamond_block", dict(force_hue=0.36, sat=1.15)),
+    "lapis_block":          ("diamond_block", dict(force_hue=0.63, sat=1.10)),
+    "coal_block":           ("stone",        dict(sat=0.15, val=0.30)),
+    "terracotta":           ("bricks",       dict(sat=0.75, val=0.92)),
+    # [v5] میز صنایع خاتم
+    "crafting_table_side":  ("oak_planks",   dict(val=0.90)),
+    "crafting_table_front": ("oak_planks",   dict(val=0.95)),
+}
+
+# [v5] زره‌های مشتق: ۴ قطعه‌ی الماسیِ AI => ۶ متریال دیگر (باگ #3)
+ARMOR_PIECES = ["helmet", "chestplate", "leggings", "boots"]
+ARMOR_DERIVE = {
+    "iron":      dict(sat=0.15, val=1.05),
+    "golden":    dict(force_hue=0.11, sat=1.60, val=1.10),
+    "netherite": dict(sat=0.30, val=0.45),
+    "leather":   dict(force_hue=0.03, sat=1.15, val=0.80),
+    "chainmail": dict(sat=0.10, val=0.90),
+}
+# پالت لایه‌های سه‌بعدی زره (بازرنگ روی UV وانیلی => مدل هرگز نمی‌شکند)
+ARMOR_LAYER_TINT = {
+    "leather":   dict(force_hue=0.02, sat=1.25, val=0.85),   # ترمه‌ی سرخ
+    "chainmail": dict(sat=0.25, val=0.95),
+    "iron":      dict(sat=0.18, val=1.05),
+    "gold":      dict(force_hue=0.11, sat=1.55, val=1.10),
+    "diamond":   dict(force_hue=0.50, sat=1.25, val=1.00),   # فیروزه
+    "netherite": dict(sat=0.35, val=0.55),
+    "turtle":    dict(force_hue=0.34, sat=1.10, val=0.95),
 }
 DERIVED_ITEMS = {
     "netherite_sword": ("diamond_sword", dict(sat=0.35, val=0.50)),
@@ -165,7 +213,13 @@ DERIVED_ITEMS = {
     "stone_axe":       ("iron_axe",      dict(sat=0.30, val=0.75)),
     "wooden_axe":      ("iron_axe",      dict(force_hue=0.07, sat=1.30, val=0.70)),
     "fishing_rod_cast": ("fishing_rod",  dict()),  # حالت پرتاب = همان راد
+    # [v5] شمش‌ها و مواد (باگ #1/#4)
+    "gold_ingot":      ("iron_ingot",    dict(tint=(232, 180, 60))),
+    "copper_ingot":    ("iron_ingot",    dict(tint=(214, 124, 74))),
+    "netherite_ingot": ("iron_ingot",    dict(tint=(88, 72, 78))),
+    "netherite_scrap": ("raw_copper",    dict(sat=0.45, val=0.50)),
 }
+# [v5] زره‌های مشتق در build_fallbacks حلقه می‌شوند (ARMOR_DERIVE)
 
 SWORDS = ["wooden_sword", "stone_sword", "iron_sword",
           "golden_sword", "diamond_sword", "netherite_sword"]
@@ -188,6 +242,7 @@ def pot(n):
     return 1 << max(4, int(round(math.log2(max(16, n)))))
 
 
+FULL_PBR = False  # [v5] وراثت PBR بلاک‌های مشتق (حجم بیشتر)
 ERRORS = []  # [v2] جمع‌آوری خطاهای مراحل — بیلد هرگز وسط راه نمی‌میرد
 
 
@@ -204,7 +259,7 @@ def stage(label):
     return wrap
 
 
-def adjust(img, hue=0.0, sat=1.0, val=1.0, force_hue=None, blur=0):
+def adjust(img, hue=0.0, sat=1.0, val=1.0, force_hue=None, blur=0, tint=None):
     """[v2] موتور مشتق‌سازی Fallback: تنظیم رنگ با حفظ آلفا و بافت."""
     img = img.convert("RGBA")
     if blur:
@@ -220,6 +275,12 @@ def adjust(img, hue=0.0, sat=1.0, val=1.0, force_hue=None, blur=0):
     hsv[..., 1] = np.clip(hsv[..., 1] * sat, 0, 255)
     hsv[..., 2] = np.clip(hsv[..., 2] * val, 0, 255)
     out_rgb = Image.fromarray(hsv.astype(np.uint8), "HSV").convert("RGB")
+    if tint is not None:
+        # [v5] رنگ‌آمیزی فلز خاکستری: لومینانس × رنگ هدف (رفع مشکل S=0)
+        lum = np.asarray(out_rgb.convert("L")).astype(np.float32) / 255.0
+        t = np.array(tint, dtype=np.float32)
+        tinted = np.clip(lum[..., None] * t * 1.35, 0, 255).astype(np.uint8)
+        out_rgb = Image.fromarray(tinted, "RGB")
     return Image.fromarray(
         np.dstack([np.asarray(out_rgb), arr[..., 3]]), "RGBA")
 
@@ -905,9 +966,9 @@ def build_fallbacks():
             continue
         img = adjust(Image.open(src_p), **ops)
         save_png(img, dst_p)
-        # نقشه‌های PBR متریال منبع نیز به ارث می‌رسند
+        # [v5] وراثت PBR فقط با فلگ --full-pbr (کنترل حجم زیر سقف ۱۰۰MB گیت‌هاب)
         mat = BLOCK_MATERIALS.get(source)
-        if mat:
+        if mat and FULL_PBR:
             normal, spec = gen_labpbr(img.convert("RGB"), mat)
             save_png(normal, os.path.join(blk_dir, target + "_n.png"))
             save_png(spec, os.path.join(blk_dir, target + "_s.png"))
@@ -1056,6 +1117,152 @@ def build_water():
     print("[8.5ب] مایعات متحرک: آب قنات + گدازه دماوند (۱۶ فریم + mcmeta) ✔")
 
 
+# ====================================== [v5] ۸.۵ج) زره‌ها + پروژکتایل ۱.۲۱
+def build_armor():
+    """
+    [باگ #3] زره‌ها: آیکون‌های ۴ قطعه‌ی الماسی (AI) => ۶ متریال دیگر مشتق؛
+    لایه‌های سه‌بعدی 3D با بازرنگ‌آمیزی روی UV وانیلی (مدل هرگز نمی‌شکند).
+    [باگ #2] پروژکتایل ویند چارج: نگاشت گوی بادگیر به تکسچر انتیتی پرتابی.
+    """
+    itm = os.path.join(TEX, "item")
+    n = 0
+    # --- آیکون‌های زره مشتق
+    for mat, ops in ARMOR_DERIVE.items():
+        for piece in ARMOR_PIECES:
+            src = os.path.join(itm, f"diamond_{piece}.png")
+            dst = os.path.join(itm, f"{mat}_{piece}.png")
+            if os.path.exists(src) and not os.path.exists(dst):
+                save_png(adjust(Image.open(src), **ops), dst)
+                n += 1
+    th = os.path.join(itm, "turtle_helmet.png")
+    dh = os.path.join(itm, "diamond_helmet.png")
+    if os.path.exists(dh) and not os.path.exists(th):
+        save_png(adjust(Image.open(dh), force_hue=0.34, sat=1.1), th)
+        n += 1
+    # --- لایه‌های سه‌بعدی (models/armor) روی UV وانیلی
+    lay_out = ensure(os.path.join(TEX, "models", "armor"))
+    van = os.path.join(VANILLA, "models", "armor")
+    for mat, ops in ARMOR_LAYER_TINT.items():
+        for layer in ("_layer_1", "_layer_2"):
+            vp = os.path.join(van, mat + layer + ".png")
+            if not os.path.exists(vp):
+                continue    # turtle فقط layer_1 دارد
+            im = Image.open(vp).convert("RGBA")
+            im = im.resize((im.width * 4, im.height * 4), Image.NEAREST)
+            save_png(adjust(im, **ops), os.path.join(lay_out, mat + layer + ".png"))
+            n += 1
+    for ov in ("leather_layer_1_overlay", "leather_layer_2_overlay"):
+        vp = os.path.join(van, ov + ".png")
+        if os.path.exists(vp):   # اورلی رنگ‌پذیر چرم دست‌نخورده (dye سالم)
+            im = Image.open(vp).convert("RGBA")
+            im = im.resize((im.width * 4, im.height * 4), Image.NEAREST)
+            save_png(im, os.path.join(lay_out, ov + ".png"))
+            n += 1
+    # --- [باگ #2] تکسچر انتیتی پرتابی ویند چارج (هر دو مسیر محتمل ۱.۲۱)
+    wc = os.path.join(itm, "wind_charge.png")
+    if os.path.exists(wc):
+        orb = Image.open(wc).convert("RGBA")
+        for sub in ("projectiles", "projectile"):
+            d = ensure(os.path.join(TEX, "entity", sub))
+            save_png(orb, os.path.join(d, "wind_charge.png"))
+            n += 1
+    print(f"[8.5ج] زره‌ها و پروژکتایل: {n} فایل (آیکون+لایه 3D+انتیتی) ✔")
+
+
+# ====================================== [v5] ۸.۵د) موتور تکسچر رویه‌ای
+# پالت‌های پارسی: (رنگ تیره، رنگ روشن، رنگ لهجه، شدت لهجه، ستاره گره‌چینی؟)
+PROC_PALETTES = {
+    "stone":     ((96, 88, 76),   (176, 166, 146), (140, 120, 90),  0.15, False),
+    "deep":      ((38, 36, 40),   (92, 90, 96),    (64, 70, 84),    0.20, False),
+    "wood":      ((72, 48, 28),   (140, 100, 62),  (190, 150, 60),  0.10, False),
+    "sand":      ((178, 150, 96), (226, 202, 148), (198, 172, 118), 0.10, False),
+    "gold":      ((150, 108, 24), (238, 202, 92),  (255, 232, 150), 0.30, True),
+    "turquoise": ((10, 110, 110), (72, 210, 196),  (230, 240, 230), 0.20, True),
+    "lapis":     ((16, 38, 100),  (48, 82, 168),   (212, 175, 55),  0.15, True),
+    "cloth":     ((110, 24, 32),  (180, 60, 60),   (212, 175, 55),  0.15, True),
+    "fire":      ((120, 30, 8),   (250, 140, 40),  (255, 220, 120), 0.35, False),
+    "ice":       ((150, 190, 215), (230, 245, 255), (180, 230, 240), 0.10, False),
+    "moss":      ((40, 78, 36),   (96, 140, 70),   (150, 170, 90),  0.12, False),
+}
+# رجیستری دارایی‌های باقی‌مانده => دسته پالت (باگ #4: پوشش صددرصدی)
+PROC_REGISTRY = {
+    "block/tuff": "deep", "block/calcite": "ice", "block/basalt_side": "deep",
+    "block/basalt_top": "deep", "block/blackstone": "deep",
+    "block/moss_block": "moss", "block/mud": "deep", "block/packed_mud": "sand",
+    "block/clay": "ice", "block/dripstone_block": "sand",
+    "block/rooted_dirt": "wood", "block/coarse_dirt": "wood",
+    "block/podzol_top": "moss", "block/mycelium_top": "moss",
+    "block/ice": "ice", "block/packed_ice": "ice", "block/blue_ice": "ice",
+    "block/soul_sand": "deep", "block/soul_soil": "deep",
+    "block/magma": "fire", "block/quartz_block_side": "ice",
+    "block/quartz_block_top": "ice", "block/purpur_block": "lapis",
+    "block/prismarine": "turquoise", "block/dark_prismarine": "turquoise",
+    "block/amethyst_block": "lapis", "block/sculk": "turquoise",
+    "block/red_wool": "cloth", "block/white_wool": "ice",
+    "block/smooth_basalt": "deep",
+}
+
+
+def tileable_fractal(size, seed, octaves=(4, 8, 16, 32)):
+    """نویز فرکتال ارزشیِ کاملاً tileable (بدون کتابخانه noise)."""
+    rng = np.random.default_rng(seed)
+    total = np.zeros((size, size), np.float32)
+    amp_sum = 0.0
+    for oi, freq in enumerate(octaves):
+        grid = rng.random((freq + 1, freq + 1)).astype(np.float32)
+        grid[-1, :] = grid[0, :]
+        grid[:, -1] = grid[:, 0]      # لبه‌ها یکی => tiling کامل
+        xs = np.linspace(0, freq, size, endpoint=False)
+        i = xs.astype(int)
+        f = xs - i
+        f = f * f * (3 - 2 * f)       # smoothstep
+        a = grid[np.ix_(i, i)]
+        b = grid[np.ix_(i, i + 1)]
+        c = grid[np.ix_(i + 1, i)]
+        d = grid[np.ix_(i + 1, i + 1)]
+        fy, fx = f[:, None], f[None, :]
+        layer = (a * (1 - fx) * (1 - fy) + b * fx * (1 - fy) +
+                 c * (1 - fx) * fy + d * fx * fy)
+        amp = 0.5 ** oi
+        total += layer * amp
+        amp_sum += amp
+    return total / amp_sum
+
+
+def procedural_fill(res=256):
+    """
+    [باگ #4] موتور «۲ ساعته»: برای هر مسیرِ رجیستری که هنوز تکسچر ندارد،
+    فوراً یک تکسچر رویه‌ایِ بی‌درزِ پارسی (نویز فرکتال + پالت فیروزه/طلا/لاجورد
+    + ستاره گره‌چینی محو) تولید می‌کند => پوشش کامل بدون حتی یک جای خالی.
+    """
+    made = 0
+    for rel, cat in PROC_REGISTRY.items():
+        if cat is None:
+            continue
+        dst = os.path.join(TEX, rel + ".png")
+        if os.path.exists(dst):
+            continue
+        dark, light, accent, acc_amt, star = PROC_PALETTES[cat]
+        seed = abs(hash(rel)) % (2 ** 31)
+        n1 = tileable_fractal(res, seed)
+        n2 = tileable_fractal(res, seed + 7, octaves=(8, 16, 32))
+        t = np.clip((n1 - n1.min()) / (np.ptp(n1) + 1e-6), 0, 1)[..., None]
+        col = (np.array(dark) * (1 - t) + np.array(light) * t)
+        mask = (n2 > (1.0 - acc_amt) * n2.max())[..., None]
+        col = np.where(mask, np.array(accent) * 0.6 + col * 0.4, col)
+        img = Image.fromarray(np.clip(col, 0, 255).astype(np.uint8), "RGB")
+        if star:   # واترمارک شمسه‌ی گره‌چینی محو
+            overlay = Image.new("RGBA", (res, res), (0, 0, 0, 0))
+            draw_eight_star(ImageDraw.Draw(overlay), res / 2, res / 2,
+                            res * 0.42, res * 0.18,
+                            accent + (26,))
+            img = Image.alpha_composite(img.convert("RGBA"), overlay).convert("RGB")
+        img = enhance_micro(img, amount=0.4)
+        save_png(img.convert("RGBA"), dst)
+        made += 1
+    print(f"[8.5د] موتور رویه‌ای: {made} تکسچر پارسی فوری تولید شد ✔")
+
+
 # ====================================== [v2] ۸.۶) اعتبارسنجی JSON و ارجاع‌ها
 def validate_pack():
     """
@@ -1127,6 +1334,15 @@ def write_lang():
         "block.minecraft.snow": "برفِ البرز",
         "block.minecraft.lava": "گدازه‌ی دماوند",
         "block.minecraft.oak_leaves": "برگِ جنگل هیرکانی",
+        "item.minecraft.diamond_helmet": "کلاهخودِ فیروزه",
+        "item.minecraft.diamond_chestplate": "جوشنِ فلسِ فیروزه",
+        "item.minecraft.diamond_leggings": "ران‌پوشِ فیروزه",
+        "item.minecraft.diamond_boots": "چکمه‌ی فیروزه",
+        "item.minecraft.raw_iron": "سنگ‌آهنِ خام",
+        "item.minecraft.raw_gold": "زرِ خام",
+        "item.minecraft.raw_copper": "مسِ خام",
+        "block.minecraft.glowstone": "فانوسِ گره‌چینی",
+        "block.minecraft.crafting_table": "میزِ خاتم‌کاری",
         "block.minecraft.obsidian": "آبسیدینِ دماوند",
         "block.minecraft.diamond_ore": "رگه‌ی فیروزه‌ی نیشابور",
         "block.minecraft.gold_ore": "رگه‌ی زرِ ساسانی",
@@ -1261,7 +1477,11 @@ def main():
                     help="رزولوشن بلاک‌ها (512 پیش‌فرض PvP، 1024 نمایشی، 2048 اولترا)")
     ap.add_argument("--item-res", type=int, default=512, help="رزولوشن آیتم‌ها")
     ap.add_argument("--no-zip", action="store_true")
+    ap.add_argument("--full-pbr", action="store_true",
+                    help="وراثت PBR برای بلاک‌های مشتق (نسخه سنگین)")
     args = ap.parse_args()
+    global FULL_PBR
+    FULL_PBR = args.full_pbr
 
     print("═" * 60)
     print("  PERSIAN LEGACY v4 — Persian Photoreal PvP Pack Builder")
@@ -1278,6 +1498,8 @@ def main():
         ("مدل‌های PvP", build_pvp_models, ()),
         ("Fallback", build_fallbacks, ()),
         ("آب متحرک", build_water, ()),
+        ("زره و پروژکتایل", build_armor, ()),
+        ("موتور رویه‌ای", procedural_fill, ()),
         ("زبان فارسی", write_lang, ()),
         ("محیط/آسمان", build_environment, ()),
         ("لوگو", build_logo, ()),

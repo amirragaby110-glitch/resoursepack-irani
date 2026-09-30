@@ -6,10 +6,12 @@
 | bookshelf | 2.14 ✅ | 127 | 92 |
 | bricks | 2.43 ✅ | 127 | 72 |
 | cobblestone | 2.49 ✅ | 127 | 35 |
+| crafting_table_top | 2.39 ✅ | 127 | 95 |
 | diamond_block | 2.07 ✅ | 127 | 217 |
 | diamond_ore | 2.36 ✅ | 127 | 97 |
 | dirt | 2.39 ✅ | 127 | 15 |
 | end_stone | 2.28 ✅ | 127 | 39 |
+| glowstone | 2.37 ✅ | 127 | 131 |
 | gold_block | 2.43 ✅ | 127 | 208 |
 | gold_ore | 2.43 ✅ | 127 | 78 |
 | grass_block_top | 3.80 ✅ | 127 | 7 |
