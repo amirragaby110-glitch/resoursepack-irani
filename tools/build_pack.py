@@ -1203,7 +1203,78 @@ PROC_REGISTRY = {
 }
 
 
-# ============================================ [v6] بچ 8K کاربر — ادغام کامل
+# ==================================== [v7] پارسی‌سازی سراسری وانیلا (پوشش کامل)
+VANILLA_TEX = "/tmp/mcmeta/assets/minecraft/textures"
+V7_SKIP_TOP = {"colormap", "gui", "realms", "font"}   # مال خودمان / بی‌اثر
+# رنگ‌های اختصاصی موب‌ها و افکت‌های شاخص (زیرمسیر => ops برای adjust)
+V7_SPECIAL = {
+    "entity/creeper/creeper": dict(hue=0.04, sat=1.18),          # زمردی‌تر
+    "entity/zombie/zombie": dict(sat=0.78, val=0.95),            # بیمارگون
+    "entity/skeleton/skeleton": dict(sat=1.1, val=1.06),         # استخوان گرم
+    "entity/blaze": dict(sat=1.3, val=1.05),                     # طلای آتشین
+    "entity/enderman/enderman_eyes": dict(tint=(64, 224, 208)),  # چشم فیروزه
+    "entity/ghast/ghast": dict(val=1.06),
+    "entity/spider/spider": dict(sat=0.9, val=0.92),
+    "misc/enchanted_glint_item": dict(tint=(64, 224, 208)),      # جلای فیروزه
+    "misc/enchanted_glint_entity": dict(tint=(64, 224, 208)),
+}
+
+
+def pixel_grade(img, strength=1.0):
+    """گرید پیکسل‌آرت: سایه‌ها فیروزه، هایلایت‌ها طلا — با حفظ آلفا و خاکستری‌ها."""
+    img = img.convert("RGBA")
+    arr = np.asarray(img).astype(np.float32)
+    rgb = arr[..., :3] / 255.0
+    lum = rgb.mean(axis=2, keepdims=True)
+    sat_est = float(np.abs(rgb - lum).mean())
+    if sat_est > 0.008:   # خاکستری‌های Tint-Safe (علف/برگ وانیلا) دست نمی‌خورند
+        teal = np.array([0.0, 0.055, 0.055], np.float32)
+        gold = np.array([0.06, 0.04, 0.0], np.float32)
+        rgb = rgb + (teal * (1 - lum) + gold * lum) * 0.5 * strength
+        rgb = lum + (rgb - lum) * 1.06          # اشباع +۶٪
+    rgb = (rgb - 0.5) * 1.045 + 0.5             # کنتراست +۴.۵٪
+    arr[..., :3] = np.clip(rgb * 255.0, 0, 255)
+    return Image.fromarray(arr.astype(np.uint8), "RGBA")
+
+
+def persianize_vanilla():
+    """[v7] هر تکسچر وانیلایی که هنوز در پک نیست => گرید پارسی + کپی mcmeta.
+    نتیجه: پوشش ۱۰۰٪ — هیچ فایلی در بازی بدون نسخه‌ی پارسی نمی‌ماند."""
+    if not os.path.isdir(VANILLA_TEX):
+        print("[8.5و] هشدار: منبع وانیلا یافت نشد — رد شد")
+        return
+    n, sp = 0, 0
+    for dp, _, fs in os.walk(VANILLA_TEX):
+        rel_dir = os.path.relpath(dp, VANILLA_TEX).replace(os.sep, "/")
+        top = rel_dir.split("/")[0]
+        if top in V7_SKIP_TOP:
+            continue
+        for f in sorted(fs):
+            if not f.endswith(".png"):
+                continue
+            rel = (rel_dir + "/" + f) if rel_dir != "." else f
+            dst = os.path.join(TEX, rel)
+            if os.path.exists(dst):
+                continue          # قبلاً نسخه‌ی اختصاصی ساخته‌ایم
+            ensure(os.path.dirname(dst))
+            img = Image.open(os.path.join(dp, f))
+            key = rel[:-4]
+            ops = next((o for k, o in V7_SPECIAL.items() if key.startswith(k)),
+                       None)
+            if ops:
+                out = adjust(pixel_grade(img, 0.6), **ops)
+                sp += 1
+            else:
+                out = pixel_grade(img)
+            out.save(dst, optimize=True)
+            meta = os.path.join(dp, f + ".mcmeta")
+            if os.path.exists(meta):   # انیمیشن‌ها (آتش، پرتال، ...)
+                shutil.copy2(meta, dst + ".mcmeta")
+            n += 1
+    print(f"[8.5و] پارسی‌سازی سراسری: {n} تکسچر وانیلا گرید شد "
+          f"({sp} رنگ اختصاصی) — پوشش کامل ✔")
+
+
 # هر منبع AI جدید => یک یا چند تکسچر هدف (بدون PBR برای ماندن زیر ۱۰۰MB)
 V6_BLOCKS = {
     "raw_iron_block": [
@@ -1595,15 +1666,29 @@ def optimize_all():
 
 
 def make_zip():
+    """[v7] دو خروجی: پکِ پایه (بدون PBR، زیر سقف ۱۰۰MiB گیت‌هاب)
+    + ادانِ PBR جدا برای شیدرهای LabPBR."""
     ensure(RELEASE)
     zpath = os.path.join(RELEASE, "PersianLegacy-PvP-v1.0.zip")
-    with zipfile.ZipFile(zpath, "w", zipfile.ZIP_DEFLATED, compresslevel=9) as z:
-        for root, _, files in os.walk(PACK):
-            for f in files:
-                p = os.path.join(root, f)
-                z.write(p, os.path.relpath(p, PACK))
-    size = os.path.getsize(zpath) / (1024 * 1024)
-    print(f"[9/9] ZIP نهایی: {zpath} ({size:.1f} MB) ✔")
+    apath = os.path.join(RELEASE, "PersianLegacy-PBR-Addon.zip")
+    zb = zipfile.ZipFile(zpath, "w", zipfile.ZIP_DEFLATED, compresslevel=9)
+    za = zipfile.ZipFile(apath, "w", zipfile.ZIP_DEFLATED, compresslevel=9)
+    for root, _, files in os.walk(PACK):
+        for f in files:
+            p = os.path.join(root, f)
+            rel = os.path.relpath(p, PACK)
+            if f.endswith(("_n.png", "_s.png")):
+                za.write(p, rel)
+            else:
+                zb.write(p, rel)
+                if rel in ("pack.mcmeta", "pack.png"):
+                    za.write(p, rel)   # ادان هم پک معتبر مستقل باشد
+    zb.close()
+    za.close()
+    sb = os.path.getsize(zpath) / (1024 * 1024)
+    sa = os.path.getsize(apath) / (1024 * 1024)
+    print(f"[9/9] ZIP پایه: {zpath} ({sb:.1f} MB) ✔")
+    print(f"[9/9] ادان PBR: {apath} ({sa:.1f} MB) ✔")
 
 
 # ================================================================ اجرا
@@ -1639,6 +1724,7 @@ def main():
         ("زره و پروژکتایل", build_armor, ()),
         ("بچ 8K (v6)", build_v6, ()),
         ("موتور رویه‌ای", procedural_fill, ()),
+        ("پارسی‌سازی سراسری (v7)", persianize_vanilla, ()),
         ("زبان فارسی", write_lang, ()),
         ("محیط/آسمان", build_environment, ()),
         ("لوگو", build_logo, ()),
