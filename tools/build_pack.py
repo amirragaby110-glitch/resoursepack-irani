@@ -69,10 +69,18 @@ BLOCK_MATERIALS = {
     "blue_glazed_terracotta": dict(smooth=0.85, f0=40,  emiss=0.00),
     "gold_block":             dict(smooth=0.90, f0=230, emiss=0.05),
     "diamond_block":          dict(smooth=0.92, f0=60,  emiss=0.08),
+    # ---- [v3.1] دارایی‌های فاز ۴ ----
+    "diamond_ore":            dict(smooth=0.45, f0=42,  emiss=0.06),
+    "gold_ore":               dict(smooth=0.40, f0=80,  emiss=0.02),
+    "obsidian":               dict(smooth=0.82, f0=46,  emiss=0.00),
+    "netherrack":             dict(smooth=0.18, f0=18,  emiss=0.02),
+    "grass_block_top":        dict(smooth=0.10, f0=16,  emiss=0.00),
 }
 
 ITEM_FILES = ["diamond_sword", "iron_sword", "netherite_sword",
-              "bow", "golden_apple", "ender_pearl"]
+              "bow", "golden_apple", "ender_pearl",
+              # [v3.1] فاز ۴ — PvP-Critical
+              "shield", "totem_of_undying", "arrow", "mace"]
 
 # چرخش اسپرایت سلاح‌ها برای هم‌راستایی با محور مورب وانیلی (لبه به بالا-راست)
 # [رفع باگ ممیزی #5: خروجی AI افقی بود => در دست بازیکن کج دیده می‌شد]
@@ -302,10 +310,22 @@ def build_blocks(res):
         img = ImageOps.fit(img, (res, res), Image.LANCZOS)
         img = make_seamless(img)
         img = grade(enhance_micro(img))   # [v3] میکرو-جزئیات + گرید سینمایی
+        if name == "grass_block_top":
+            # [v3.1] Tint-Safe: خاکستری خالص => رنگ سبز از colormap بایوم
+            # (هیرکانی/لوت/البرز) در خود بازی اعمال می‌شود، مثل وانیلا
+            l = np.asarray(img.convert("L"), np.float32)
+            l = np.clip(l * (150.0 / max(l.mean(), 1.0)), 0, 255).astype(np.uint8)
+            img = Image.merge("RGB", [Image.fromarray(l)] * 3)
         save_png(img.convert("RGBA"), os.path.join(out_dir, name + ".png"))
         normal, spec = gen_labpbr(img, mat)
         save_png(normal, os.path.join(out_dir, name + "_n.png"))
         save_png(spec, os.path.join(out_dir, name + "_s.png"))
+        n += 1
+    # [v3.1] شیشه اروسی: مرکزِ سبز کروماکی => کاملاً شفاف (دید PvP باز)
+    gp = os.path.join(src_dir, "glass.png")
+    if os.path.exists(gp):
+        g = chroma_key(Image.open(gp)).resize((res, res), Image.LANCZOS)
+        save_png(g, os.path.join(out_dir, "glass.png"))
         n += 1
     print(f"[3/9] {n} بلاک + نقشه‌های PBR ساخته شد ✔ (رزولوشن {res})")
 
@@ -583,7 +603,56 @@ def build_pvp_models():
         }
         with open(os.path.join(mdl_dir, sword + ".json"), "w") as f:
             json.dump(model, f, indent=2)
-    print("[8/9] مدل‌های PvP شمشیرها (کوچک/تمیز/دید باز) نوشته شد ✔")
+
+    # [v3.1] گرز ۱.۲۱ (Mace) — همان فلسفه: مسطح، کوچک، Hitbox وانیلی
+    mace = {"_comment": "Persian gorz — flat PvP model (MC 1.21+)",
+            "parent": "minecraft:item/handheld",
+            "textures": {"layer0": "minecraft:item/mace"},
+            "display": display}
+    with open(os.path.join(mdl_dir, "mace.json"), "w") as f:
+        json.dump(mace, f, indent=2)
+
+    # [v3.1] سپر دوبعدی PvP: مدل ۳بعدی وانیلی نیمِ صفحه را کور می‌کند؛
+    # مدل تختِ کوچک => دید باز + سیلوئت خوانا (تکنیک رایج پک‌های PvP)
+    sh_disp = {
+        "thirdperson_righthand": {"rotation": [0, 90, 0],
+                                  "translation": [0, 2.0, 1.0],
+                                  "scale": [0.65, 0.65, 0.65]},
+        "thirdperson_lefthand": {"rotation": [0, -90, 0],
+                                 "translation": [0, 2.0, 1.0],
+                                 "scale": [0.65, 0.65, 0.65]},
+        "firstperson_righthand": {"rotation": [0, -10, 0],
+                                  "translation": [-2.5, 1.0, 0],
+                                  "scale": [0.55, 0.55, 0.55]},
+        "firstperson_lefthand": {"rotation": [0, 10, 0],
+                                 "translation": [-2.5, 1.0, 0],
+                                 "scale": [0.55, 0.55, 0.55]},
+        "gui": {"scale": [1, 1, 1]},
+        "ground": {"translation": [0, 2, 0], "scale": [0.4, 0.4, 0.4]},
+        "fixed": {"rotation": [0, 180, 0], "scale": [1, 1, 1]},
+    }
+    shield = {"_comment": "Persian round shield — flat 2D PvP model",
+              "parent": "minecraft:item/generated",
+              "textures": {"layer0": "minecraft:item/shield"},
+              "display": sh_disp,
+              "overrides": [{"predicate": {"blocking": 1},
+                             "model": "minecraft:item/shield_blocking"}]}
+    blocking = {"_comment": "blocking pose — نزدیک‌تر اما همچنان غیرمسدودکننده",
+                "parent": "minecraft:item/generated",
+                "textures": {"layer0": "minecraft:item/shield"},
+                "display": {
+                    **sh_disp,
+                    "firstperson_righthand": {"rotation": [0, -5, 5],
+                                              "translation": [-1.2, 1.5, 0],
+                                              "scale": [0.75, 0.75, 0.75]},
+                    "firstperson_lefthand": {"rotation": [0, 5, -5],
+                                             "translation": [-1.2, 1.5, 0],
+                                             "scale": [0.75, 0.75, 0.75]}}}
+    with open(os.path.join(mdl_dir, "shield.json"), "w") as f:
+        json.dump(shield, f, indent=2)
+    with open(os.path.join(mdl_dir, "shield_blocking.json"), "w") as f:
+        json.dump(blocking, f, indent=2)
+    print("[8/9] مدل‌های PvP (شمشیرها + گرز + سپر تخت) نوشته شد ✔")
 
 
 # ================================================ ۸) آسمان و محیط
@@ -701,6 +770,23 @@ def build_fallbacks():
         n += 1
     # [v3-QA] فریم‌های کشیدن کمان: اگر bow.png سفارشی است ولی pulling ها نه،
     # عدم‌تطابق بصری رخ می‌دهد => سه فریم با فشردگی افقی فزاینده مشتق می‌شود
+    # [v3.1] وجه کناری بلاک چمن: خاک البرز + نوار سبز هیرکانی در لبه بالا
+    d_p = os.path.join(blk_dir, "dirt.png")
+    t_p = os.path.join(blk_dir, "grass_block_top.png")
+    side_p = os.path.join(blk_dir, "grass_block_side.png")
+    if os.path.exists(d_p) and os.path.exists(t_p) and not os.path.exists(side_p):
+        base = Image.open(d_p).convert("RGBA")
+        top = Image.open(t_p).convert("RGBA")
+        wh = base.width
+        strip = np.asarray(top.resize((wh, wh)).crop((0, 0, wh, int(wh * 0.22))),
+                           np.float32)
+        lum = strip[..., :3].mean(-1, keepdims=True) / 255.0
+        green = np.array([96, 158, 72], np.float32)  # سبز هیرکانی ثابت
+        colored = np.dstack([np.clip(lum * green[None, None, :] * 1.55, 0, 255)
+                             .astype(np.uint8), strip[..., 3].astype(np.uint8)])
+        base.paste(Image.fromarray(colored, "RGBA"), (0, 0))
+        save_png(base, side_p)
+        n += 1
     bow_p = os.path.join(itm_dir, "bow.png")
     if os.path.exists(bow_p):
         bow = Image.open(bow_p).convert("RGBA")
@@ -740,7 +826,9 @@ def validate_pack():
                 local = os.path.join(TEX, "item", name + ".png")
                 # یا در خود پک موجود است یا وانیلا آن را دارد (whitelist)
                 if not os.path.exists(local) and name not in (
-                        SWORDS + ["bow", "golden_apple", "ender_pearl"]):
+                        SWORDS + ["bow", "golden_apple", "ender_pearl",
+                                  "shield", "totem_of_undying", "arrow",
+                                  "mace"]):
                     bad.append(f"{p}: ارجاع ناشناخته -> {ref}")
     if bad:
         for b in bad:
@@ -765,6 +853,11 @@ def write_lang():
         "item.minecraft.enchanted_golden_apple": "سیبِ جاودانگی",
         "item.minecraft.ender_pearl": "گویِ فیروزه",
         "item.minecraft.shield": "سپرِ سپرداران",
+        "item.minecraft.mace": "گرزِ رستم",
+        "block.minecraft.obsidian": "آبسیدینِ دماوند",
+        "block.minecraft.diamond_ore": "رگه‌ی فیروزه‌ی نیشابور",
+        "block.minecraft.gold_ore": "رگه‌ی زرِ ساسانی",
+        "block.minecraft.glass": "شیشه‌ی اروسی",
         "item.minecraft.totem_of_undying": "فَروَهَرِ جاودانی",
         "block.minecraft.stone": "سنگِ پارسه",
         "block.minecraft.stone_bricks": "سنگ‌نگاره‌ی تخت‌جمشید",
@@ -898,7 +991,7 @@ def main():
     args = ap.parse_args()
 
     print("═" * 60)
-    print("  PERSIAN LEGACY v2 — Persian Photoreal PvP Pack Builder")
+    print("  PERSIAN LEGACY v3.1 — Persian Photoreal PvP Pack Builder")
     print("═" * 60)
     # [v2] هر مرحله ایزوله اجرا می‌شود؛ خطای یک مرحله بیلد را متوقف نمی‌کند
     steps = [
