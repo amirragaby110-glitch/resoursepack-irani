@@ -72,6 +72,9 @@ BLOCK_MATERIALS = {
     # ---- [v3.1] دارایی‌های فاز ۴ ----
     "diamond_ore":            dict(smooth=0.45, f0=42,  emiss=0.06),
     "gold_ore":               dict(smooth=0.40, f0=80,  emiss=0.02),
+    "iron_ore":               dict(smooth=0.35, f0=90,  emiss=0.00),
+    "end_stone":              dict(smooth=0.20, f0=18,  emiss=0.00),
+    "bookshelf":              dict(smooth=0.42, f0=26,  emiss=0.00),
     "obsidian":               dict(smooth=0.82, f0=46,  emiss=0.00),
     "netherrack":             dict(smooth=0.18, f0=18,  emiss=0.02),
     "grass_block_top":        dict(smooth=0.10, f0=16,  emiss=0.00),
@@ -80,11 +83,18 @@ BLOCK_MATERIALS = {
 ITEM_FILES = ["diamond_sword", "iron_sword", "netherite_sword",
               "bow", "golden_apple", "ender_pearl",
               # [v3.1] فاز ۴ — PvP-Critical
-              "shield", "totem_of_undying", "arrow", "mace"]
+              "shield", "totem_of_undying", "arrow", "mace",
+              # [v3.2] سلاح‌های ثانویه و جواهرات
+              "diamond_axe", "iron_axe", "fishing_rod", "crossbow_standby",
+              "diamond", "emerald"]
+
+# رنگ کلید کروما برای هر آیتم (پیش‌فرض سبز؛ جواهر سبز => ماژنتا!)
+ITEM_KEY = {"emerald": "magenta"}
 
 # چرخش اسپرایت سلاح‌ها برای هم‌راستایی با محور مورب وانیلی (لبه به بالا-راست)
 # [رفع باگ ممیزی #5: خروجی AI افقی بود => در دست بازیکن کج دیده می‌شد]
-ITEM_ROTATE = {"diamond_sword": 35, "iron_sword": 35}
+ITEM_ROTATE = {"diamond_sword": 35, "iron_sword": 35,
+               "diamond_axe": 10, "iron_axe": 20}  # [v3.2]
 
 # ------------------- سیستم Fallback تماتیک (نسخه ۲) -------------------
 # اگر برای دارایی خاصی تکسچر AI ساخته نشده باشد، از نزدیک‌ترین تکسچر
@@ -121,6 +131,12 @@ DERIVED_ITEMS = {
     "golden_sword":    ("iron_sword",    dict(force_hue=0.11, sat=1.70, val=1.10)),
     "stone_sword":     ("iron_sword",    dict(sat=0.30, val=0.75)),
     "wooden_sword":    ("iron_sword",    dict(force_hue=0.07, sat=1.30, val=0.70)),
+    # [v3.2] خانواده تبرزین + متفرقه
+    "netherite_axe":   ("diamond_axe",   dict(sat=0.35, val=0.50)),
+    "golden_axe":      ("iron_axe",      dict(force_hue=0.11, sat=1.70, val=1.10)),
+    "stone_axe":       ("iron_axe",      dict(sat=0.30, val=0.75)),
+    "wooden_axe":      ("iron_axe",      dict(force_hue=0.07, sat=1.30, val=0.70)),
+    "fishing_rod_cast": ("fishing_rod",  dict()),  # حالت پرتاب = همان راد
 }
 
 SWORDS = ["wooden_sword", "stone_sword", "iron_sword",
@@ -331,16 +347,24 @@ def build_blocks(res):
 
 
 # ============================================== ۳) آیتم‌ها (کلید کروما سبز)
-def chroma_key(img, despill=True):
-    """حذف پس‌زمینه سبز خالص و پاک‌سازی لبه‌ها برای آیکون آیتم تمیز PvP."""
+def chroma_key(img, despill=True, key="green"):
+    """[v3.2] حذف پس‌زمینه‌ی کلید (سبز یا ماژنتا) + پاک‌سازی هاله لبه‌ها."""
     a = np.asarray(img.convert("RGB"), dtype=np.int16)
     r, g, b = a[..., 0], a[..., 1], a[..., 2]
-    greenness = g - np.maximum(r, b)
-    alpha = np.clip(255 - (greenness - 12) * 6, 0, 255).astype(np.uint8)
-    alpha[greenness > 60] = 0
-    if despill:  # حذف هاله سبز لبه‌ها
-        spill = np.clip(g - (r + b) // 2, 0, 255)
-        a[..., 1] = np.clip(g - spill // 2, 0, 255)
+    if key == "magenta":   # برای آیتم‌های سبز (زمرد!) از ماژنتا کلید می‌گیریم
+        keyness = np.minimum(r, b) - g
+    else:
+        keyness = g - np.maximum(r, b)
+    alpha = np.clip(255 - (keyness - 12) * 6, 0, 255).astype(np.uint8)
+    alpha[keyness > 60] = 0
+    if despill:  # حذف هاله رنگ کلید از لبه‌ها
+        if key == "magenta":
+            spill = np.clip((r + b) // 2 - g, 0, 255)
+            a[..., 0] = np.clip(r - spill // 2, 0, 255)
+            a[..., 2] = np.clip(b - spill // 2, 0, 255)
+        else:
+            spill = np.clip(g - (r + b) // 2, 0, 255)
+            a[..., 1] = np.clip(g - spill // 2, 0, 255)
     out = np.dstack([a.astype(np.uint8), alpha])
     return Image.fromarray(out, "RGBA")
 
@@ -356,7 +380,7 @@ def build_items(res_item):
         p = os.path.join(src_dir, name + ".png")
         if not os.path.exists(p):
             continue
-        img = chroma_key(Image.open(p))
+        img = chroma_key(Image.open(p), key=ITEM_KEY.get(name, "green"))
         # [v2] هم‌راستاسازی مورب سلاح‌ها با گرفتن وانیلی (رفع باگ #5)
         if name in ITEM_ROTATE:
             img = img.rotate(ITEM_ROTATE[name], expand=True,
@@ -612,6 +636,16 @@ def build_pvp_models():
     with open(os.path.join(mdl_dir, "mace.json"), "w") as f:
         json.dump(mace, f, indent=2)
 
+    # [v3.2] خانواده تبرزین — همان ترنسفورم PvP شمشیرها
+    for axe in ["wooden_axe", "stone_axe", "iron_axe", "golden_axe",
+                "diamond_axe", "netherite_axe"]:
+        model = {"_comment": "Persian tabarzin — flat PvP model",
+                 "parent": "minecraft:item/handheld",
+                 "textures": {"layer0": f"minecraft:item/{axe}"},
+                 "display": display}
+        with open(os.path.join(mdl_dir, axe + ".json"), "w") as f:
+            json.dump(model, f, indent=2)
+
     # [v3.1] سپر دوبعدی PvP: مدل ۳بعدی وانیلی نیمِ صفحه را کور می‌کند؛
     # مدل تختِ کوچک => دید باز + سیلوئت خوانا (تکنیک رایج پک‌های PvP)
     sh_disp = {
@@ -797,7 +831,63 @@ def build_fallbacks():
             frame.paste(sq, ((w - sq.width) // 2, 0), sq)
             save_png(frame, os.path.join(itm_dir, f"bow_pulling_{idx}.png"))
             n += 1
+    # [v3.2] زنبورک: فریم‌های کشش + حالت تیر/ترقه‌ی بارگذاری‌شده
+    cb_p = os.path.join(itm_dir, "crossbow_standby.png")
+    ar_p = os.path.join(itm_dir, "arrow.png")
+    if os.path.exists(cb_p):
+        cb = Image.open(cb_p).convert("RGBA")
+        w, hgt = cb.size
+        for idx, squeeze in enumerate([0.97, 0.90, 0.82]):
+            frame = Image.new("RGBA", (w, hgt), (0, 0, 0, 0))
+            sq = cb.resize((int(w * squeeze), hgt), Image.LANCZOS)
+            frame.paste(sq, ((w - sq.width) // 2, 0), sq)
+            save_png(frame, os.path.join(itm_dir, f"crossbow_pulling_{idx}.png"))
+            n += 1
+        loaded = cb.copy()
+        if os.path.exists(ar_p):   # تیر پارتی بارگذاری‌شده روی قنداق
+            ar = Image.open(ar_p).convert("RGBA").rotate(55, expand=True,
+                                                         resample=Image.BICUBIC)
+            ar = ar.resize((int(w * 0.5), int(hgt * 0.5)), Image.LANCZOS)
+            loaded.alpha_composite(ar, (w // 4, hgt // 8))
+        save_png(loaded, os.path.join(itm_dir, "crossbow_arrow.png"))
+        save_png(adjust(loaded, hue=-0.06, sat=1.3),
+                 os.path.join(itm_dir, "crossbow_firework.png"))
+        n += 3
     print(f"[8.5] سیستم Fallback: {n} دارایی مشتق‌شده تولید شد ✔")
+
+
+# ====================================== [v3.2] ۸.۵ب) آب متحرک قنات
+def build_water():
+    """
+    آب قنات: ۱۶ فریم متحرک بی‌درز (اسکرول + موج سینوسی) از یک فریم پایه.
+    تکسچر Tint-Safe خاکستری => رنگ فیروزه از بایوم/colormap اعمال می‌شود.
+    """
+    src = os.path.join(SRC, "block", "water_still.png")
+    if not os.path.exists(src):
+        return
+    res, frames = 256, 16
+    base = Image.open(src).convert("L")
+    base = ImageOps.autocontrast(ImageOps.fit(base, (res, res), Image.LANCZOS),
+                                 cutoff=2)
+    arr = np.asarray(base, np.float32)
+    arr = np.clip(arr * (175.0 / max(arr.mean(), 1.0)), 40, 255)  # روشن و شفاف
+    xs = np.arange(res)
+    strip = Image.new("RGBA", (res, res * frames))
+    for f in range(frames):
+        ph = 2 * math.pi * f / frames
+        frame = np.roll(arr, int(res * f / frames), axis=0)     # اسکرول حلقه‌ای
+        for x in xs:                                            # موج سینوسی ستونی
+            frame[:, x] = np.roll(frame[:, x],
+                                  int(3 * math.sin(ph + x * 4 * math.pi / res)))
+        g = frame.astype(np.uint8)
+        rgba = np.dstack([g, g, g, np.full_like(g, 255)])
+        strip.paste(Image.fromarray(rgba, "RGBA"), (0, f * res))
+    for name, ft in [("water_still", 3), ("water_flow", 2)]:
+        save_png(strip, os.path.join(TEX, "block", name + ".png"))
+        with open(os.path.join(TEX, "block", name + ".png.mcmeta"), "w",
+                  encoding="utf-8") as fh:
+            json.dump({"animation": {"frametime": ft}}, fh)
+    print("[8.5ب] آب قنات متحرک (۱۶ فریم بی‌درز + mcmeta) ساخته شد ✔")
 
 
 # ====================================== [v2] ۸.۶) اعتبارسنجی JSON و ارجاع‌ها
@@ -828,7 +918,9 @@ def validate_pack():
                 if not os.path.exists(local) and name not in (
                         SWORDS + ["bow", "golden_apple", "ender_pearl",
                                   "shield", "totem_of_undying", "arrow",
-                                  "mace"]):
+                                  "mace", "wooden_axe", "stone_axe",
+                                  "iron_axe", "golden_axe", "diamond_axe",
+                                  "netherite_axe"]):
                     bad.append(f"{p}: ارجاع ناشناخته -> {ref}")
     if bad:
         for b in bad:
@@ -854,6 +946,14 @@ def write_lang():
         "item.minecraft.ender_pearl": "گویِ فیروزه",
         "item.minecraft.shield": "سپرِ سپرداران",
         "item.minecraft.mace": "گرزِ رستم",
+        "item.minecraft.diamond_axe": "تبرزینِ فیروزه",
+        "item.minecraft.iron_axe": "تبرزینِ فولاد",
+        "item.minecraft.crossbow": "زنبورک",
+        "item.minecraft.fishing_rod": "قلابِ نیزار",
+        "item.minecraft.diamond": "فیروزه‌ی تراش‌خورده",
+        "item.minecraft.emerald": "زمردِ پنجشیر",
+        "block.minecraft.bookshelf": "کتابخانه‌ی نسخ خطی",
+        "block.minecraft.end_stone": "سنگِ نیایشگاه کهن",
         "block.minecraft.obsidian": "آبسیدینِ دماوند",
         "block.minecraft.diamond_ore": "رگه‌ی فیروزه‌ی نیشابور",
         "block.minecraft.gold_ore": "رگه‌ی زرِ ساسانی",
@@ -991,7 +1091,7 @@ def main():
     args = ap.parse_args()
 
     print("═" * 60)
-    print("  PERSIAN LEGACY v3.1 — Persian Photoreal PvP Pack Builder")
+    print("  PERSIAN LEGACY v3.2 — Persian Photoreal PvP Pack Builder")
     print("═" * 60)
     # [v2] هر مرحله ایزوله اجرا می‌شود؛ خطای یک مرحله بیلد را متوقف نمی‌کند
     steps = [
@@ -1004,6 +1104,7 @@ def main():
         ("Colormap", build_colormaps, ()),
         ("مدل‌های PvP", build_pvp_models, ()),
         ("Fallback", build_fallbacks, ()),
+        ("آب متحرک", build_water, ()),
         ("زبان فارسی", write_lang, ()),
         ("محیط/آسمان", build_environment, ()),
         ("لوگو", build_logo, ()),

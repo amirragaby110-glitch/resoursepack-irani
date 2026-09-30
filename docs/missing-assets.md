@@ -8,12 +8,14 @@
 | stone / cobblestone / stone_bricks / bricks / oak_planks / sand / dirt / blue_glazed_terracotta / gold_block / diamond_block | ✅ + PBR |
 | deepslate ×2، smooth_stone، andesite/diorite/granite، sandstone ×3، cracked/mossy_stone_bricks، planks ×۸ گونه (چری/بامبو/...)، gravel، mud_bricks (کاهگل) | 🟡 مشتق خودکار + PBR |
 | grass_block top (tint-safe خاکستری) + side (کامپوزیت خودکار) | ✅ v3.1 |
-| water/lava (استریپ انیمیشن + `.mcmeta`) | 🔴 |
+| water still/flow — ۱۶ فریم متحرک tint-safe + mcmeta | ✅ v3.2 |
+| lava (استریپ انیمیشن) | 🔴 |
 | diamond_ore (فیروزه نیشابور) / gold_ore (زر ساسانی) | ✅ v3.1 |
-| iron_ore, copper_ore, redstone_ore, ... | 🔴 |
+| iron_ore (هماتیت) | ✅ v3.2 |
+| copper_ore, redstone_ore, lapis_ore, coal_ore | 🔴 |
 | بلاک‌های مس/۱.۲۱ (copper family, tuff, trial spawner) | 🔴 |
 | glass (اروسی، مرکز شفاف PvP) / obsidian (دماوند) / netherrack | ✅ v3.1 |
-| end_stone | 🔴 |
+| end_stone (سنگ نیایشگاه) / bookshelf (نسخ خطی) | ✅ v3.2 |
 
 ## آیتم‌ها
 | دارایی | وضعیت |
@@ -21,7 +23,8 @@
 | diamond_sword, iron_sword, bow (+۳ فریم کشش), golden_apple, ender_pearl | ✅ |
 | netherite/golden/stone/wooden_sword | 🟡 مشتق رنگی از شمشیرهای اصلی |
 | arrow (تیر پارتی), shield (سپر فروهر + مدل تخت 2D PvP), totem (فروهر), mace (گرز رستم ۱.۲۱ + مدل) | ✅ v3.1 |
-| trident, crossbow, fishing_rod, axe ها | 🔴 |
+| تبرزین‌ها (۶ تبر + مدل PvP)، زنبورک (+فریم‌های کشش/بارگذاری)، قلاب ماهیگیری (+cast)، فیروزه تراش، زمرد پنجشیر | ✅ v3.2 |
+| trident, snowball, splash potions | 🔴 |
 | زره‌ها (item + `models/armor/*_layer_1/2`) + trim ها | 🔴 |
 | elytra (بال سیمرغ) | 🔴 |
 
