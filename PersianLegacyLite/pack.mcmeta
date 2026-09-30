@@ -1,0 +1,10 @@
+{
+  "pack": {
+    "pack_format": 75,
+    "supported_formats": {
+      "min_inclusive": 15,
+      "max_inclusive": 99
+    },
+    "description": "§bPersian§6Legacy §fPvP §aLite§7 — 1.21.11 | FPS+"
+  }
+}

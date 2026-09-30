@@ -2461,5 +2461,17 @@
   "special_mob_tints": 9,
   "note": "پوشش ۱۰۰٪ — هر تکسچر درون‌بازی نسخه پارسی دارد؛ PBR در ادان جدا",
   "pbr_addon": "release/PersianLegacy-PBR-Addon.zip"
+ },
+ "v8_pvp_lite_1_21_11": {
+  "pack_format": 75,
+  "zip": "release/PersianLegacy-PvP-Lite-v2.0.zip",
+  "hud_sprites_1_20_2_plus": 21,
+  "features": [
+   "low fire (fire_0/1 + soul)",
+   "clear water alpha 62%",
+   "transparent small totem",
+   "block cap 128px / item 256px",
+   "full 2379-texture coverage"
+  ]
  }
 }

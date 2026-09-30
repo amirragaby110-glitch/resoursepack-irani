@@ -1691,8 +1691,129 @@ def make_zip():
     print(f"[9/9] ادان PBR: {apath} ({sa:.1f} MB) ✔")
 
 
-# ================================================================ اجرا
-def main():
+# ==================================== [v8] بازنویسی کامل: PvP Lite — 1.21.11
+LITE_PACK = os.path.join(os.path.dirname(PACK), "PersianLegacyLite")
+LITE_FORMAT = 75          # pack_format رسمی 1.21.11
+# سقف رزولوشن هر دسته در نسخه‌ی سبک (FPS-boost)
+LITE_MAXRES = {"block": 128, "item": 256, "particle": 128, "entity": 256,
+               "environment": 512, "gui": 512, "misc": 256, "models": 256}
+# برش HUD قدیمی (icons/widgets ×S) => اسپرایت‌های 1.20.2+ (نام‌های رسمی 1.21.11)
+LITE_SPRITES_ICONS = {
+    "crosshair": (0, 0, 15, 15),
+    "heart/container": (16, 0, 9, 9), "heart/container_blinking": (25, 0, 9, 9),
+    "heart/full": (52, 0, 9, 9), "heart/full_blinking": (70, 0, 9, 9),
+    "heart/half": (61, 0, 9, 9), "heart/half_blinking": (79, 0, 9, 9),
+    "armor_empty": (16, 9, 9, 9), "armor_half": (25, 9, 9, 9),
+    "armor_full": (34, 9, 9, 9),
+    "air": (16, 18, 9, 9), "air_bursting": (25, 18, 9, 9),
+    "food_empty": (16, 27, 9, 9), "food_half": (61, 27, 9, 9),
+    "food_full": (52, 27, 9, 9),
+    "experience_bar_background": (0, 64, 182, 5),
+    "experience_bar_progress": (0, 69, 182, 5),
+}
+LITE_SPRITES_WIDGETS = {
+    "hotbar": (0, 0, 182, 22), "hotbar_selection": (0, 22, 24, 23),
+    "hotbar_offhand_left": (24, 22, 29, 24),
+    "hotbar_offhand_right": (53, 22, 29, 24),
+}
+
+
+def _lite_shorten_fire(fp, cut=0.50, fade=0.32):
+    """لو-فایر کلاسیک PvP: شفاف‌سازی نیمه‌ی بالای هر فریم آتش."""
+    im = Image.open(fp).convert("RGBA")
+    arr = np.asarray(im).astype(np.float32)
+    w = arr.shape[1]
+    rows = np.arange(arr.shape[0]) % max(w, 1)      # ردیف محلی هر فریم
+    t = np.clip((rows / w - (cut - fade)) / fade, 0, 1)  # 0=نامرئی .. 1=کامل
+    arr[..., 3] *= t[:, None]
+    Image.fromarray(arr.astype(np.uint8), "RGBA").save(fp, optimize=True)
+
+
+def build_lite121():
+    """[v8] بازنویسی کامل پک به نسخه‌ی سبک PvP برای 1.21.11:
+    کپی + کاهش رزولوشن، اسپرایت‌های HUD جدید، لو-فایر، توتم شفاف، آب زلال."""
+    if os.path.isdir(LITE_PACK):
+        shutil.rmtree(LITE_PACK)
+    shutil.copytree(PACK, LITE_PACK,
+                    ignore=shutil.ignore_patterns("*_n.png", "*_s.png"))
+    ltex = os.path.join(LITE_PACK, "assets", "minecraft", "textures")
+    # --- ۱) کاهش رزولوشن دسته‌ای (FPS-boost)
+    shrunk = 0
+    for dp, _, fs in os.walk(ltex):
+        rel_top = os.path.relpath(dp, ltex).replace(os.sep, "/").split("/")[0]
+        cap = LITE_MAXRES.get(rel_top)
+        if not cap:
+            continue
+        for f in fs:
+            if not f.endswith(".png"):
+                continue
+            p = os.path.join(dp, f)
+            im = Image.open(p)
+            if im.width > cap:                     # نوارهای انیمیشن: نسبت حفظ
+                nh = max(1, round(im.height * cap / im.width))
+                im.resize((cap, nh), Image.LANCZOS).save(p, optimize=True)
+                shrunk += 1
+    # --- ۲) اسپرایت‌های HUD رسمی 1.21.11 (برش از هنر ۴x خودمان)
+    hud = os.path.join(ltex, "gui", "sprites", "hud")
+    icons = Image.open(os.path.join(TEX, "gui", "icons.png"))
+    widgets = Image.open(os.path.join(TEX, "gui", "widgets.png"))
+    sc = icons.width // 256                        # ضریب S واقعی
+    for sheet, table in ((icons, LITE_SPRITES_ICONS),
+                         (widgets, LITE_SPRITES_WIDGETS)):
+        for name, (x, y, w, h) in table.items():
+            crop = sheet.crop((x * sc, y * sc, (x + w) * sc, (y + h) * sc))
+            fp = os.path.join(hud, name + ".png")
+            ensure(os.path.dirname(fp))
+            crop.save(fp, optimize=True)
+    # --- ۳) لو-فایر (آتش و آتش روح)
+    for fn in ("fire_0", "fire_1", "soul_fire_0", "soul_fire_1"):
+        p = os.path.join(ltex, "block", fn + ".png")
+        if os.path.exists(p):
+            _lite_shorten_fire(p)
+    # --- ۴) توتم کوچک و نیمه‌شفاف (دید وسط صفحه باز)
+    tp = os.path.join(ltex, "item", "totem_of_undying.png")
+    if os.path.exists(tp):
+        t = Image.open(tp).convert("RGBA")
+        small = t.resize((max(1, int(t.width * .62)),
+                          max(1, int(t.height * .62))), Image.LANCZOS)
+        cv = Image.new("RGBA", t.size, (0, 0, 0, 0))
+        cv.paste(small, ((t.width - small.width) // 2,
+                         t.height - small.height), small)
+        a = np.asarray(cv).astype(np.float32)
+        a[..., 3] *= 0.55
+        Image.fromarray(a.astype(np.uint8), "RGBA").save(tp, optimize=True)
+    # --- ۵) آب زلال (Clear Water کلاسیک PvP)
+    for fn in ("water_still", "water_flow"):
+        p = os.path.join(ltex, "block", fn + ".png")
+        if os.path.exists(p):
+            im = Image.open(p).convert("RGBA")
+            a = np.asarray(im).astype(np.float32)
+            a[..., 3] *= 0.62
+            Image.fromarray(a.astype(np.uint8), "RGBA").save(p, optimize=True)
+    # --- ۶) pack.mcmeta مخصوص 1.21.11
+    meta = {"pack": {
+        "pack_format": LITE_FORMAT,
+        "supported_formats": {"min_inclusive": 15, "max_inclusive": 99},
+        "description": "§bPersian§6Legacy §fPvP §aLite§7 — 1.21.11 | FPS+"}}
+    with open(os.path.join(LITE_PACK, "pack.mcmeta"), "w",
+              encoding="utf-8") as fh:
+        json.dump(meta, fh, ensure_ascii=False, indent=2)
+    # --- ۷) ZIP
+    ensure(RELEASE)
+    zpath = os.path.join(RELEASE, "PersianLegacy-PvP-Lite-v2.0.zip")
+    with zipfile.ZipFile(zpath, "w", zipfile.ZIP_DEFLATED,
+                         compresslevel=9) as z:
+        for root, _, files in os.walk(LITE_PACK):
+            for f in files:
+                p = os.path.join(root, f)
+                z.write(p, os.path.relpath(p, LITE_PACK))
+    size = os.path.getsize(zpath) / (1024 * 1024)
+    spr = len(LITE_SPRITES_ICONS) + len(LITE_SPRITES_WIDGETS)
+    print(f"[v8] PvP Lite 1.21.11: {shrunk} تکسچر سبک‌سازی، {spr} اسپرایت HUD،"
+          f" لو-فایر+توتم+آب زلال — ZIP {size:.1f} MB ✔")
+
+
+
     ap = argparse.ArgumentParser(description="Persian Legacy PvP pack builder")
     # [v2/QA] پیش‌فرض 512 = تعادل طلایی PvP (۳۲ برابر وانیلا، بدون فشار رم)
     # برای نسخه نمایشی/عکاسی: --res 1024 یا --res 2048
@@ -1725,6 +1846,7 @@ def main():
         ("بچ 8K (v6)", build_v6, ()),
         ("موتور رویه‌ای", procedural_fill, ()),
         ("پارسی‌سازی سراسری (v7)", persianize_vanilla, ()),
+        ("PvP Lite 1.21.11 (v8)", build_lite121, ()),
         ("زبان فارسی", write_lang, ()),
         ("محیط/آسمان", build_environment, ()),
         ("لوگو", build_logo, ()),
