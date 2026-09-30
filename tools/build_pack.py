@@ -1203,6 +1203,140 @@ PROC_REGISTRY = {
 }
 
 
+# ============================================ [v6] بچ 8K کاربر — ادغام کامل
+# هر منبع AI جدید => یک یا چند تکسچر هدف (بدون PBR برای ماندن زیر ۱۰۰MB)
+V6_BLOCKS = {
+    "raw_iron_block": [
+        ("raw_iron_block", None),
+        ("raw_gold_block", dict(tint=(226, 176, 70))),
+        ("raw_copper_block", dict(tint=(206, 122, 76))),
+    ],
+    "persepolis_stone": [
+        ("diorite", None),
+        ("polished_diorite", dict(val=1.05, sat=0.9)),
+        ("calcite", dict(val=1.08)),
+        ("andesite", dict(val=0.74, sat=0.8)),
+        ("granite", dict(tint=(196, 132, 108))),
+    ],
+    "khatam_wood": [
+        ("note_block", None),
+        ("jukebox_side", dict(val=0.92)),
+        ("jukebox_top", dict(val=0.84)),
+    ],
+    "lut_sand": [
+        ("sand", None),
+        ("red_sand", dict(tint=(203, 116, 68))),
+        ("terracotta", dict(sat=0.8, val=0.85)),
+    ],
+}
+# برگ‌ها: خاکستریِ Tint-Safe => رنگ نهایی از colormap پارسی (هیرکانی) می‌آید
+V6_LEAVES = {
+    "oak_leaves": 1.0, "spruce_leaves": 0.80, "birch_leaves": 1.12,
+    "dark_oak_leaves": 0.68, "jungle_leaves": 1.02, "acacia_leaves": 0.94,
+    "mangrove_leaves": 0.88, "azalea_leaves": 1.06,
+}
+V6_ARMOR_DETAIL = [  # لایه‌هایی که الگوی لملار رویشان سوار می‌شود (چرم = dye، معاف)
+    "diamond_layer_1", "diamond_layer_2", "gold_layer_1", "gold_layer_2",
+    "iron_layer_1", "iron_layer_2", "netherite_layer_1", "netherite_layer_2",
+    "turtle_layer_1",
+]
+
+
+def build_v6(res=512):
+    """[v6] ادغام بچ 8K: بلاک‌ها، برگ Tint-Safe، گرز/نیزه، گوی گردباد v2،
+    آب مصرف underwater، و جزئیات لملار روی لایه‌های 3D زره."""
+    blk = os.path.join(TEX, "block")
+    itm = os.path.join(TEX, "item")
+    n = 0
+    # --- ۱) بلاک‌های tileable + مشتق‌ها
+    for src_name, targets in V6_BLOCKS.items():
+        p = os.path.join(SRC, "block", src_name + ".png")
+        if not os.path.exists(p):
+            continue
+        base = Image.open(p).convert("RGB")
+        base = ImageOps.fit(base, (res, res), Image.LANCZOS)
+        base = grade(enhance_micro(make_seamless(base)))
+        for tgt, ops in targets:
+            out = adjust(base, **ops) if ops else base.convert("RGBA")
+            save_png(out, os.path.join(blk, tgt + ".png"))
+            n += 1
+    # --- ۲) برگ هیرکانی => خاکستری Tint-Safe (رنگ از colormap)
+    lp = os.path.join(SRC, "block", "hyrcanian_leaves.png")
+    if os.path.exists(lp):
+        lf = Image.open(lp).convert("RGB")
+        lf = ImageOps.fit(lf, (res, res), Image.LANCZOS)
+        lf = enhance_micro(make_seamless(lf))
+        lum = np.asarray(lf.convert("L"), np.float32)
+        lum = np.clip(lum * (155.0 / max(lum.mean(), 1.0)), 0, 255)
+        for tgt, v in V6_LEAVES.items():
+            g = np.clip(lum * v, 0, 255).astype(np.uint8)
+            save_png(Image.merge("RGB", [Image.fromarray(g)] * 3).convert("RGBA"),
+                     os.path.join(blk, tgt + ".png"))
+            n += 1
+    # --- ۳) آیتم‌ها: گرز (mace 1.21) + نیزه/ترایدنت v2 — کلید ماژنتا
+    for src_name, tgt in (("mace", "mace"), ("trident_v2", "trident")):
+        p = os.path.join(SRC, "item", src_name + ".png")
+        if not os.path.exists(p):
+            continue
+        img = chroma_key(Image.open(p), key="magenta")
+        bbox = img.getbbox()
+        if bbox:
+            img = img.crop(bbox)
+        side = int(max(img.size) * 1.08)
+        canvas = Image.new("RGBA", (side, side), (0, 0, 0, 0))
+        canvas.paste(img, ((side - img.width) // 2,
+                           (side - img.height) // 2), img)
+        canvas = grade(canvas.resize((res, res), Image.LANCZOS))
+        save_png(canvas, os.path.join(itm, tgt + ".png"))
+        n += 1
+    # --- ۴) گوی گردباد v2 (پس‌زمینه سیاه => آلفا از روشنایی)
+    wp = os.path.join(SRC, "entity", "wind_charge_v2.png")
+    if os.path.exists(wp):
+        w = Image.open(wp).convert("RGB")
+        w = ImageOps.fit(w, (res, res), Image.LANCZOS)
+        a = np.asarray(w).astype(np.float32)
+        alpha = np.clip(a.max(axis=2) * 1.5, 0, 255).astype(np.uint8)
+        orb = Image.fromarray(
+            np.dstack([a.astype(np.uint8), alpha]), "RGBA")
+        for rel in ("item/wind_charge.png",
+                    "entity/projectiles/wind_charge.png",
+                    "entity/projectile/wind_charge.png"):
+            fp = os.path.join(TEX, rel)
+            ensure(os.path.dirname(fp))
+            save_png(orb, fp)
+            n += 1
+    # --- ۵) آب خلیج فارس => اورلی زیر آب (misc/underwater)
+    up = os.path.join(SRC, "misc", "persian_gulf_water.png")
+    if os.path.exists(up):
+        u = Image.open(up).convert("RGB")
+        u = ImageOps.fit(u, (256, 256), Image.LANCZOS)
+        u = make_seamless(u).convert("RGBA")
+        u.putalpha(150)   # شفاف: دید PvP زیر آب باز می‌ماند
+        save_png(u, os.path.join(TEX, "misc", "underwater.png"))
+        n += 1
+    # --- ۶) الگوی لملار هخامنشی روی لایه‌های 3D زره (سوار بر UV سالم)
+    pp = os.path.join(SRC, "misc", "lamellar_pattern.png")
+    arm = os.path.join(TEX, "models", "armor")
+    if os.path.exists(pp) and os.path.isdir(arm):
+        pat = Image.open(pp).convert("L")
+        pat = ImageOps.fit(pat, (64, 64), Image.LANCZOS)
+        pl = np.asarray(pat).astype(np.float32) / 255.0
+        for lay in V6_ARMOR_DETAIL:
+            fp = os.path.join(arm, lay + ".png")
+            if not os.path.exists(fp):
+                continue
+            im = Image.open(fp).convert("RGBA")
+            arr = np.asarray(im).astype(np.float32)
+            th, tw = arr.shape[0], arr.shape[1]
+            tiled = np.tile(pl, (th // 64 + 1, tw // 64 + 1))[:th, :tw]
+            # سافت‌لایت ملایم: بافت فلس بدون خراب‌کردن خوانایی UV
+            mod = 0.78 + 0.44 * tiled[..., None]
+            arr[..., :3] = np.clip(arr[..., :3] * mod, 0, 255)
+            save_png(Image.fromarray(arr.astype(np.uint8), "RGBA"), fp)
+            n += 1
+    print(f"[8.5هـ] بچ 8K (v6): {n} تکسچر ادغام شد ✔")
+
+
 def tileable_fractal(size, seed, octaves=(4, 8, 16, 32)):
     """نویز فرکتال ارزشیِ کاملاً tileable (بدون کتابخانه noise)."""
     rng = np.random.default_rng(seed)
@@ -1343,6 +1477,10 @@ def write_lang():
         "item.minecraft.raw_copper": "مسِ خام",
         "block.minecraft.glowstone": "فانوسِ گره‌چینی",
         "block.minecraft.crafting_table": "میزِ خاتم‌کاری",
+        "item.minecraft.mace": "گرزِ گرشاسپ",
+        "item.minecraft.trident": "نیزه‌ی گاردِ جاویدان",
+        "block.minecraft.note_block": "بلوکِ نغمه‌ی خاتم",
+        "block.minecraft.sand": "ماسه‌ی کویرِ لوت",
         "block.minecraft.obsidian": "آبسیدینِ دماوند",
         "block.minecraft.diamond_ore": "رگه‌ی فیروزه‌ی نیشابور",
         "block.minecraft.gold_ore": "رگه‌ی زرِ ساسانی",
@@ -1499,6 +1637,7 @@ def main():
         ("Fallback", build_fallbacks, ()),
         ("آب متحرک", build_water, ()),
         ("زره و پروژکتایل", build_armor, ()),
+        ("بچ 8K (v6)", build_v6, ()),
         ("موتور رویه‌ای", procedural_fill, ()),
         ("زبان فارسی", write_lang, ()),
         ("محیط/آسمان", build_environment, ()),

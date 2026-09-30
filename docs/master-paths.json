@@ -1,7 +1,7 @@
 {
  "deliverable": "Master_Paths_Dictionary",
  "pack": "PersianLegacy-PvP v1.0 (v5 sprint)",
- "total_textures": 228,
+ "total_textures": 238,
  "format": "vanilla_path -> path inside PersianLegacy pack (identical override paths per resource-pack spec)",
  "bugfix_highlights": {
   "BUG1_raw_ores": [
@@ -39,6 +39,7 @@
    "assets/minecraft/textures/block/acacia_planks.png": "assets/minecraft/textures/block/acacia_planks.png",
    "assets/minecraft/textures/block/amethyst_block.png": "assets/minecraft/textures/block/amethyst_block.png",
    "assets/minecraft/textures/block/andesite.png": "assets/minecraft/textures/block/andesite.png",
+   "assets/minecraft/textures/block/azalea_leaves.png": "assets/minecraft/textures/block/azalea_leaves.png",
    "assets/minecraft/textures/block/bamboo_planks.png": "assets/minecraft/textures/block/bamboo_planks.png",
    "assets/minecraft/textures/block/basalt_side.png": "assets/minecraft/textures/block/basalt_side.png",
    "assets/minecraft/textures/block/basalt_top.png": "assets/minecraft/textures/block/basalt_top.png",
@@ -89,6 +90,8 @@
    "assets/minecraft/textures/block/ice.png": "assets/minecraft/textures/block/ice.png",
    "assets/minecraft/textures/block/iron_block.png": "assets/minecraft/textures/block/iron_block.png",
    "assets/minecraft/textures/block/iron_ore.png": "assets/minecraft/textures/block/iron_ore.png",
+   "assets/minecraft/textures/block/jukebox_side.png": "assets/minecraft/textures/block/jukebox_side.png",
+   "assets/minecraft/textures/block/jukebox_top.png": "assets/minecraft/textures/block/jukebox_top.png",
    "assets/minecraft/textures/block/jungle_leaves.png": "assets/minecraft/textures/block/jungle_leaves.png",
    "assets/minecraft/textures/block/jungle_planks.png": "assets/minecraft/textures/block/jungle_planks.png",
    "assets/minecraft/textures/block/lapis_block.png": "assets/minecraft/textures/block/lapis_block.png",
@@ -105,6 +108,7 @@
    "assets/minecraft/textures/block/mycelium_top.png": "assets/minecraft/textures/block/mycelium_top.png",
    "assets/minecraft/textures/block/netherite_block.png": "assets/minecraft/textures/block/netherite_block.png",
    "assets/minecraft/textures/block/netherrack.png": "assets/minecraft/textures/block/netherrack.png",
+   "assets/minecraft/textures/block/note_block.png": "assets/minecraft/textures/block/note_block.png",
    "assets/minecraft/textures/block/oak_leaves.png": "assets/minecraft/textures/block/oak_leaves.png",
    "assets/minecraft/textures/block/oak_log.png": "assets/minecraft/textures/block/oak_log.png",
    "assets/minecraft/textures/block/oak_log_top.png": "assets/minecraft/textures/block/oak_log_top.png",
@@ -113,12 +117,17 @@
    "assets/minecraft/textures/block/packed_ice.png": "assets/minecraft/textures/block/packed_ice.png",
    "assets/minecraft/textures/block/packed_mud.png": "assets/minecraft/textures/block/packed_mud.png",
    "assets/minecraft/textures/block/podzol_top.png": "assets/minecraft/textures/block/podzol_top.png",
+   "assets/minecraft/textures/block/polished_diorite.png": "assets/minecraft/textures/block/polished_diorite.png",
    "assets/minecraft/textures/block/poppy.png": "assets/minecraft/textures/block/poppy.png",
    "assets/minecraft/textures/block/powder_snow.png": "assets/minecraft/textures/block/powder_snow.png",
    "assets/minecraft/textures/block/prismarine.png": "assets/minecraft/textures/block/prismarine.png",
    "assets/minecraft/textures/block/purpur_block.png": "assets/minecraft/textures/block/purpur_block.png",
    "assets/minecraft/textures/block/quartz_block_side.png": "assets/minecraft/textures/block/quartz_block_side.png",
    "assets/minecraft/textures/block/quartz_block_top.png": "assets/minecraft/textures/block/quartz_block_top.png",
+   "assets/minecraft/textures/block/raw_copper_block.png": "assets/minecraft/textures/block/raw_copper_block.png",
+   "assets/minecraft/textures/block/raw_gold_block.png": "assets/minecraft/textures/block/raw_gold_block.png",
+   "assets/minecraft/textures/block/raw_iron_block.png": "assets/minecraft/textures/block/raw_iron_block.png",
+   "assets/minecraft/textures/block/red_sand.png": "assets/minecraft/textures/block/red_sand.png",
    "assets/minecraft/textures/block/red_tulip.png": "assets/minecraft/textures/block/red_tulip.png",
    "assets/minecraft/textures/block/red_wool.png": "assets/minecraft/textures/block/red_wool.png",
    "assets/minecraft/textures/block/redstone_ore.png": "assets/minecraft/textures/block/redstone_ore.png",
@@ -241,7 +250,8 @@
   },
   "misc": {
    "assets/minecraft/textures/misc/enchanted_glint_entity.png": "assets/minecraft/textures/misc/enchanted_glint_entity.png",
-   "assets/minecraft/textures/misc/enchanted_glint_item.png": "assets/minecraft/textures/misc/enchanted_glint_item.png"
+   "assets/minecraft/textures/misc/enchanted_glint_item.png": "assets/minecraft/textures/misc/enchanted_glint_item.png",
+   "assets/minecraft/textures/misc/underwater.png": "assets/minecraft/textures/misc/underwater.png"
   },
   "models": {
    "assets/minecraft/textures/models/armor/chainmail_layer_1.png": "assets/minecraft/textures/models/armor/chainmail_layer_1.png",
@@ -280,5 +290,44 @@
    "assets/minecraft/textures/particle/sweep_6.png": "assets/minecraft/textures/particle/sweep_6.png",
    "assets/minecraft/textures/particle/sweep_7.png": "assets/minecraft/textures/particle/sweep_7.png"
   }
+ },
+ "v6_batch_8k": {
+  "mace": "assets/minecraft/textures/item/mace.png",
+  "trident": "assets/minecraft/textures/item/trident.png",
+  "wind_charge_v2": "item + entity/projectiles + entity/projectile",
+  "raw_ore_blocks": [
+   "raw_iron_block",
+   "raw_gold_block",
+   "raw_copper_block"
+  ],
+  "persepolis_family": [
+   "diorite",
+   "polished_diorite",
+   "calcite",
+   "andesite",
+   "granite"
+  ],
+  "khatam_family": [
+   "note_block",
+   "jukebox_side",
+   "jukebox_top"
+  ],
+  "lut_family": [
+   "sand",
+   "red_sand",
+   "terracotta"
+  ],
+  "leaves_tint_safe": [
+   "oak",
+   "spruce",
+   "birch",
+   "dark_oak",
+   "jungle",
+   "acacia",
+   "mangrove",
+   "azalea"
+  ],
+  "underwater_overlay": "assets/minecraft/textures/misc/underwater.png",
+  "armor_lamellar_detail": "9 layer files modulated"
  }
 }
