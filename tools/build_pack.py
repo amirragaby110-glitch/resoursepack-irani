@@ -737,14 +737,15 @@ def build_pvp_models():
     """
     mdl_dir = os.path.join(PACK, "assets", "minecraft", "models", "item")
     display = {
-        "thirdperson_righthand": {"rotation": [0, -90, 55], "translation": [0, 3.0, 0.5],
-                                  "scale": [0.80, 0.80, 0.80]},
-        "thirdperson_lefthand": {"rotation": [0, 90, -55], "translation": [0, 3.0, 0.5],
-                                 "scale": [0.80, 0.80, 0.80]},
-        "firstperson_righthand": {"rotation": [0, -90, 25], "translation": [1.5, 3.2, 1.0],
-                                  "scale": [0.62, 0.62, 0.62]},
-        "firstperson_lefthand": {"rotation": [0, 90, -25], "translation": [1.5, 3.2, 1.0],
-                                 "scale": [0.62, 0.62, 0.62]},
+        # [v9] Short Swords — شمشیر کوتاه کلاسیک PvP: تیغه کوچک، دید باز
+        "thirdperson_righthand": {"rotation": [0, -90, 55], "translation": [0, 3.5, 0.5],
+                                  "scale": [0.64, 0.64, 0.64]},
+        "thirdperson_lefthand": {"rotation": [0, 90, -55], "translation": [0, 3.5, 0.5],
+                                 "scale": [0.64, 0.64, 0.64]},
+        "firstperson_righthand": {"rotation": [0, -90, 25], "translation": [1.0, 2.2, 0.8],
+                                  "scale": [0.46, 0.46, 0.46]},
+        "firstperson_lefthand": {"rotation": [0, 90, -25], "translation": [1.0, 2.2, 0.8],
+                                 "scale": [0.46, 0.46, 0.46]},
         "gui": {"rotation": [0, 0, 0], "translation": [0, 0, 0], "scale": [1, 1, 1]},
         "ground": {"translation": [0, 2, 0], "scale": [0.5, 0.5, 0.5]},
         "fixed": {"rotation": [0, 180, 0], "scale": [1, 1, 1]},
@@ -1691,6 +1692,54 @@ def make_zip():
     print(f"[9/9] ادان PBR: {apath} ({sa:.1f} MB) ✔")
 
 
+# ==================================== [v9] هات‌بار واضح گره‌چینی + سلکتور
+def build_hotbar_v9():
+    """هات‌بار قابل‌دیدن به سبک پک‌های Bedwars: پنل تیره‌ی نیمه‌شفاف با قاب
+    طلایی خاتم + سلکتور فیروزه‌ی پررنگ. مستقیم در widgets.png (نسخه‌های
+    قدیمی) نوشته می‌شود؛ اسپرایت‌های 1.21 از همین برش می‌خورند."""
+    wp = os.path.join(TEX, "gui", "widgets.png")
+    img = Image.open(wp).convert("RGBA")
+    sc = img.width // 256
+    d = ImageDraw.Draw(img)
+    GOLD = (212, 175, 55)
+    TURQ = (64, 224, 208)
+    # --- هات‌بار 182x22
+    x0, y0, x1, y1 = 0, 0, 182 * sc - 1, 22 * sc - 1
+    d.rectangle([x0, y0, x1, y1], fill=(0, 0, 0, 0))
+    d.rounded_rectangle([x0, y0, x1, y1], radius=3 * sc,
+                        fill=(13, 17, 27, 155))
+    d.rounded_rectangle([x0, y0, x1, y1], radius=3 * sc,
+                        outline=GOLD + (235,), width=sc)
+    d.rounded_rectangle([x0 + sc, y0 + sc, x1 - sc, y1 - sc],
+                        radius=2 * sc, outline=TURQ + (70,),
+                        width=max(1, sc // 2))
+    for i in range(1, 9):        # جداکننده‌ی ۹ اسلات
+        xx = (1 + 20 * i) * sc
+        d.line([(xx, 4 * sc), (xx, 18 * sc)], fill=GOLD + (70,),
+               width=max(1, sc // 2))
+    # --- سلکتور 24x23 (قاب فیروزه + گوشه‌های طلایی)
+    sx, sy = 0, 22 * sc
+    d.rectangle([sx, sy, sx + 24 * sc - 1, sy + 23 * sc - 1],
+                fill=(0, 0, 0, 0))
+    d.rectangle([sx, sy, sx + 24 * sc - 1, sy + 23 * sc - 1],
+                outline=TURQ + (255,), width=2 * sc)
+    c = 3 * sc                   # گوشه‌های طلایی
+    for cx, cy in ((sx, sy), (sx + 24 * sc - c, sy),
+                   (sx, sy + 23 * sc - c), (sx + 24 * sc - c, sy + 23 * sc - c)):
+        d.rectangle([cx, cy, cx + c - 1, cy + c - 1], fill=GOLD + (255,))
+    # --- پنل آفهند چپ/راست 29x24
+    for ox in (24, 53):
+        ax0, ay0 = ox * sc, 22 * sc
+        ax1, ay1 = ax0 + 29 * sc - 1, ay0 + 24 * sc - 1
+        d.rectangle([ax0, ay0, ax1, ay1], fill=(0, 0, 0, 0))
+        d.rounded_rectangle([ax0, ay0, ax1, ay1], radius=3 * sc,
+                            fill=(13, 17, 27, 150))
+        d.rounded_rectangle([ax0, ay0, ax1, ay1], radius=3 * sc,
+                            outline=GOLD + (220,), width=sc)
+    save_png(img, wp)
+    print("[v9] هات‌بار گره‌چینی + سلکتور فیروزه + آفهند نوشته شد ✔")
+
+
 # ==================================== [v8] بازنویسی کامل: PvP Lite — 1.21.11
 LITE_PACK = os.path.join(os.path.dirname(PACK), "PersianLegacyLite")
 LITE_FORMAT = 75          # pack_format رسمی 1.21.11
@@ -1846,6 +1895,7 @@ def build_lite121():
         ("بچ 8K (v6)", build_v6, ()),
         ("موتور رویه‌ای", procedural_fill, ()),
         ("پارسی‌سازی سراسری (v7)", persianize_vanilla, ()),
+        ("هات‌بار v9", build_hotbar_v9, ()),
         ("PvP Lite 1.21.11 (v8)", build_lite121, ()),
         ("زبان فارسی", write_lang, ()),
         ("محیط/آسمان", build_environment, ()),
