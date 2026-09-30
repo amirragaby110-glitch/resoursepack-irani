@@ -1,0 +1,78 @@
+{
+  "project": "Persian_PvP_Ultra_HD_Pack",
+  "version": "v3-upgraded",
+  "usage": "Midjourney v6: append --v 6 --style raw (--tile for blocks). SDXL: use negative_prompt field directly.",
+  "global_negative": "plastic look, over-smoothing, waxy surface, blurry, low detail, cartoon, painting, watermark, text, signature, vignette, perspective distortion, baked shadows, directional lighting, lens flare",
+  "prompts": [
+    {
+      "id": 1,
+      "target": "block/stone.png (albedo upgrade)",
+      "prompt": "flawless photorealistic weathered Persepolis limestone material scan, faint eroded Achaemenid relief ghosting in the grain, microscopic pores, hairline micro-cracks, fine dust in crevices, neutral flat diffuse lighting, perfectly seamless tileable, top-down orthographic, 8k PBR albedo, natural muted beige",
+      "negative_prompt": "plastic look, over-smoothing, baked lighting, shadows at edges, visible seams, repeating artifacts",
+      "params": "--v 6 --style raw --tile --ar 1:1"
+    },
+    {
+      "id": 2,
+      "target": "block/blue_glazed_terracotta.png (albedo upgrade)",
+      "prompt": "flawless Isfahan Safavid glazed tile material scan, symmetric eslimi arabesque in Persian turquoise, lapis cobalt and gold leaf, kiln-fired glossy glaze with authentic fine crazing micro-cracks and tiny pinhole imperfections, flat frontal orthographic, seamless tileable, 8k PBR albedo, cinematic turquoise-gold grading",
+      "negative_prompt": "plastic look, over-smoothing, dull colors, asymmetry, perspective, baked reflections burned into color",
+      "params": "--v 6 --style raw --ar 1:1"
+    },
+    {
+      "id": 3,
+      "target": "block/oak_planks.png (albedo upgrade)",
+      "prompt": "flawless Persian walnut plank material scan, four equal planks, fibrous open-pore wood grain, subtle khatam marquetry brass-bone star inlay at seams, hand-polish micro-scratches following the grain, satin oil finish, flat top-down, seamless tileable, 8k PBR albedo",
+      "negative_prompt": "plastic look, over-smoothing, glossy varnish glare, baked highlights, uneven plank widths",
+      "params": "--v 6 --style raw --tile --ar 1:1"
+    },
+    {
+      "id": 4,
+      "target": "block/bricks.png (albedo upgrade)",
+      "prompt": "flawless Yazd adobe brickwork material scan, porous rough clay bricks with granular sand texture, crumbly mortar, occasional tiny glazed turquoise diamond insets with glossy contrast against matte clay, wind erosion micro-pitting, flat frontal orthographic, seamless tileable, 8k PBR albedo",
+      "negative_prompt": "plastic look, over-smoothing, uniform bricks, clean studio look, baked shadows",
+      "params": "--v 6 --style raw --tile --ar 1:1"
+    },
+    {
+      "id": 5,
+      "target": "block/gold_block.png (albedo upgrade)",
+      "prompt": "flawless engraved Achaemenid gold panel material scan, repoussé winged-sun and rosette motifs, authentic hammered surface with micro-scratches, fingerprint-free satin gold, slight patina in recesses, flat frontal orthographic, even studio softbox, seamless tileable, 8k PBR albedo",
+      "negative_prompt": "plastic look, over-smoothing, mirror chrome, blown highlights, baked specular hotspots",
+      "params": "--v 6 --style raw --tile --ar 1:1"
+    },
+    {
+      "id": 6,
+      "target": "item/diamond_sword.png (hero weapon upgrade)",
+      "prompt": "legendary Persian shamshir game icon, watered damascus steel with visible layered jauhar pattern and micro-scratches from honing, turquoise-teal blade sheen, engraved gold crossguard with tarnish in recesses, turquoise inlay grip with fine wear, diagonal blade tip to top-right, crisp silhouette, PvP clean hitbox, isolated on flat pure green 00FF00, 8k",
+      "negative_prompt": "plastic look, over-smoothing, glow bleeding on background, soft edges, extra weapons, 3d perspective ground shadow",
+      "params": "--v 6 --style raw --ar 1:1"
+    },
+    {
+      "id": 7,
+      "target": "item/bow.png + pulling frames (upgrade)",
+      "prompt": "traditional Persian recurve composite bow game icon, lacquered horn-wood limbs with hairline lacquer cracks, gold and crimson miniature floral painting with genuine brushstroke texture, taut silk string with fiber detail, diagonal composition, crisp silhouette, PvP clean hitbox, isolated on flat pure green 00FF00, 8k",
+      "negative_prompt": "plastic look, over-smoothing, arrow included, blurry string, background gradient",
+      "params": "--v 6 --style raw --ar 1:1"
+    },
+    {
+      "id": 8,
+      "target": "environment sky_day.png (skybox upgrade)",
+      "prompt": "flawless panoramic Lut desert sky, deep turquoise zenith to warm amber haze gradient, sparse elongated cirrus with realistic ice-crystal wisps, dry crystal air clarity, even exposure all directions, no sun disc, photorealistic 8k game skybox",
+      "negative_prompt": "ground, horizon objects, birds, lens flare, vignette, banding, oversaturation",
+      "params": "--v 6 --style raw --ar 3:2"
+    },
+    {
+      "id": 9,
+      "target": "environment sky_night.png (skybox upgrade)",
+      "prompt": "flawless panoramic Persian desert night sky, dense sharp starfield with accurate magnitude variation, glowing milky way band, deep lapis-indigo gradient, faint turquoise nebula wisps, astrophotography grain kept subtle, even brightness all directions, no moon disc, 8k game skybox",
+      "negative_prompt": "ground, silhouettes, noise blotches, purple fringing, lens artifacts, text",
+      "params": "--v 6 --style raw --ar 3:2"
+    },
+    {
+      "id": 10,
+      "target": "pack.png (logo upgrade)",
+      "prompt": "epic square game logo, majestic Isfahan iwan archway in brilliant turquoise-gold girih mosaic with individually readable tiles, crossed damascus shamshir with jauhar micro-pattern, golden sun halo, cinematic turquoise-and-gold grading, subtle voxel blocks at base, heroic centered composition, 8k masterpiece",
+      "negative_prompt": "plastic look, over-smoothing, text, watermark, blurry tiles, deformed swords, oversaturated neon",
+      "params": "--v 6 --style raw --ar 1:1"
+    }
+  ]
+}
