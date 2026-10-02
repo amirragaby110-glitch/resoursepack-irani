@@ -1902,6 +1902,39 @@ def build_lite121():
             a = np.asarray(im).astype(np.float32)
             a[..., 3] *= 0.62
             Image.fromarray(a.astype(np.uint8), "RGBA").save(p, optimize=True)
+    # --- ۵.۵) [v11] شمشیرِ شمشیر پارسی — پیکسل‌آرت 16x16 سخت (بدون AA)
+    sp = os.path.join(SRC, "item", "shamshir_pixel2.png")
+    if os.path.exists(sp):
+        from PIL import ImageEnhance
+        simg = chroma_key(Image.open(sp), key="magenta")
+        sb = simg.getbbox()
+        if sb:
+            simg = simg.crop(sb)
+        sside = max(simg.size)
+        scv = Image.new("RGBA", (sside, sside), (0, 0, 0, 0))
+        scv.paste(simg, ((sside - simg.width) // 2,
+                         (sside - simg.height) // 2), simg)
+
+        def _pixelize(canvas, npx, ncol):
+            pp = canvas.resize((npx, npx), Image.BOX)
+            aa = np.asarray(pp).copy()
+            aa[..., 3] = np.where(aa[..., 3] > 110, 255, 0)   # آلفای باینری
+            rr = Image.fromarray(aa[..., :3], "RGB")
+            rr = ImageEnhance.Color(rr).enhance(1.25)
+            rr = ImageEnhance.Brightness(rr).enhance(1.15)
+            rr = ImageEnhance.Contrast(rr).enhance(1.15)
+            rr = rr.quantize(colors=ncol, dither=Image.NONE).convert("RGB")
+            return Image.fromarray(
+                np.dstack([np.asarray(rr), aa[..., 3]]), "RGBA")
+
+        px16 = _pixelize(scv, 16, 14)
+        px16.save(os.path.join(ltex, "item", "diamond_sword.png"),
+                  optimize=True)
+        dark = np.asarray(px16).astype(np.float32)        # واریانت نتریت
+        dark[..., :3] *= 0.55
+        dark[..., 2] = np.clip(dark[..., 2] * 1.25, 0, 255)  # ته‌رنگ تیل
+        Image.fromarray(dark.astype(np.uint8), "RGBA").save(
+            os.path.join(ltex, "item", "netherite_sword.png"), optimize=True)
     # --- ۶) pack.mcmeta مخصوص 1.21.11
     meta = {"pack": {
         "pack_format": LITE_FORMAT,
