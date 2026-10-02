@@ -1830,6 +1830,126 @@ def build_hotbar_v9():
     print("[v9] هات‌بار گره‌چینی + سلکتور فیروزه + آفهند نوشته شد ✔")
 
 
+# ===================== [v13] اسپرایت‌های HUD برنامه‌ای (فیکس گلیچ 1.21)
+HUD_K = 6                       # هر پیکسل منطقی = 6 پیکسل واقعی
+
+HUD_HEART = ["..XX.XX..", ".XXXXXXX.", ".XXXXXXX.", ".XXXXXXX.",
+             "..XXXXX..", "...XXX...", "....X....", ".........",
+             "........."]
+HUD_SHIELD = [".XXXXXXX.", ".XXXXXXX.", ".XXXXXXX.", ".XXXXXXX.",
+              "..XXXXX..", "...XXX...", "....X....", ".........",
+              "........."]
+HUD_POM = ["....X....", "...X.X...", "..XXXXX..", ".XXXXXXX.",
+           ".XXXXXXX.", ".XXXXXXX.", "..XXXXX..", "...XXX...",
+           "........."]
+HUD_BUBBLE = [".........", "..XXXX...", ".XXXXXX..", ".XX.XXX..",
+              ".XXXXXX..", ".XXXXXX..", "..XXXX...", ".........",
+              "........."]
+
+
+def _hud_sprite(mask, fill, outline, highlight=None, half=None,
+                special_rows=None, special=None):
+    """ماسک 9x9 => اسپرایت ضد-گلیچ: پر، دورخط خودکار، های‌لایت.
+    half='left' فقط ستون‌های 0..4 را نگه می‌دارد (نیم‌قلب/نیم‌غذا)."""
+    h, w = len(mask), len(mask[0])
+    img = Image.new("RGBA", (w * HUD_K, h * HUD_K), (0, 0, 0, 0))
+    d = ImageDraw.Draw(img)
+    def on(r, c):
+        return 0 <= r < h and 0 <= c < w and mask[r][c] == "X"
+    for r in range(h):
+        for c in range(w):
+            if not on(r, c):
+                continue
+            if half == "left" and c > 4:
+                continue
+            edge = not (on(r-1, c) and on(r+1, c) and on(r, c-1) and on(r, c+1))
+            col = outline if edge else fill
+            if special_rows and r in special_rows:
+                col = special
+            d.rectangle([c*HUD_K, r*HUD_K, (c+1)*HUD_K-1, (r+1)*HUD_K-1],
+                        fill=col + (255,))
+    if highlight and half != "left":
+        d.rectangle([2*HUD_K, 1*HUD_K, 3*HUD_K-1, 2*HUD_K-1],
+                    fill=highlight + (255,))
+    return img
+
+
+def build_hud_sprites():
+    """[v13] همه‌ی اسپرایت‌های HUD 1.20.2+ از صفر ترسیم می‌شوند —
+    بدون برش از icons.png => بدون پیکسل آشغالی، بدون ناهم‌راستایی."""
+    hud = os.path.join(TEX, "gui", "sprites", "hud")
+    ensure(os.path.join(hud, "heart"))
+    TURQ, TURQ_D = (64, 224, 208), (10, 70, 66)
+    TURQ_B = (140, 255, 244)
+    GOLD, GOLD_D = (222, 180, 60), (90, 66, 12)
+    GRAY, GRAY_D = (72, 72, 80), (22, 22, 28)
+    RED, RED_D = (196, 48, 74), (70, 10, 24)
+    def sv(img, name):
+        img.save(os.path.join(hud, name + ".png"), optimize=True)
+    # --- قلب‌ها (فیروزه) + چشمک‌زن + جذب طلایی + سواری
+    sv(_hud_sprite(HUD_HEART, GRAY, GRAY_D), "heart/container")
+    sv(_hud_sprite(HUD_HEART, (96, 96, 106), (40, 40, 48)),
+       "heart/container_blinking")
+    sv(_hud_sprite(HUD_HEART, TURQ, TURQ_D, TURQ_B), "heart/full")
+    sv(_hud_sprite(HUD_HEART, TURQ_B, TURQ_D), "heart/full_blinking")
+    sv(_hud_sprite(HUD_HEART, TURQ, TURQ_D, half="left"), "heart/half")
+    sv(_hud_sprite(HUD_HEART, TURQ_B, TURQ_D, half="left"),
+       "heart/half_blinking")
+    sv(_hud_sprite(HUD_HEART, GOLD, GOLD_D, (255, 240, 170)),
+       "heart/absorbing_full")
+    sv(_hud_sprite(HUD_HEART, GOLD, GOLD_D, half="left"),
+       "heart/absorbing_half")
+    sv(_hud_sprite(HUD_HEART, RED, RED_D, (255, 150, 170)),
+       "heart/vehicle_full")
+    sv(_hud_sprite(HUD_HEART, RED, RED_D, half="left"), "heart/vehicle_half")
+    sv(_hud_sprite(HUD_HEART, GRAY, GRAY_D), "heart/vehicle_container")
+    # --- زره (سپر طلایی)
+    sv(_hud_sprite(HUD_SHIELD, GOLD, GOLD_D, (255, 240, 170)), "armor_full")
+    sv(_hud_sprite(HUD_SHIELD, GOLD, GOLD_D, half="left"), "armor_half")
+    sv(_hud_sprite(HUD_SHIELD, GRAY, GRAY_D), "armor_empty")
+    # --- غذا (انار با تاج طلایی)
+    pom = dict(special_rows={0, 1}, special=GOLD)
+    sv(_hud_sprite(HUD_POM, (205, 42, 66), (78, 8, 22),
+                   (255, 160, 150), **pom), "food_full")
+    sv(_hud_sprite(HUD_POM, (205, 42, 66), (78, 8, 22),
+                   half="left", **pom), "food_half")
+    sv(_hud_sprite(HUD_POM, GRAY, GRAY_D), "food_empty")
+    sv(_hud_sprite(HUD_POM, (128, 128, 52), (48, 48, 14),
+                   **pom), "food_full_hunger")
+    sv(_hud_sprite(HUD_POM, (128, 128, 52), (48, 48, 14),
+                   half="left", **pom), "food_half_hunger")
+    sv(_hud_sprite(HUD_POM, GRAY, GRAY_D), "food_empty_hunger")
+    # --- حباب هوا
+    sv(_hud_sprite(HUD_BUBBLE, (150, 225, 240), (30, 90, 120)), "air")
+    sv(_hud_sprite(HUD_BUBBLE, (200, 240, 250), (60, 120, 150)),
+       "air_bursting")
+    # --- کراس‌هیر شمسه 15x15
+    K = HUD_K
+    ch = Image.new("RGBA", (15 * K, 15 * K), (0, 0, 0, 0))
+    d = ImageDraw.Draw(ch)
+    for a, b in ((0, 5), (9, 14)):                       # بازوهای باز وسط
+        d.rectangle([7*K+1, a*K, 8*K-2, (b+1)*K-1], fill=(245, 245, 245, 230))
+        d.rectangle([a*K, 7*K+1, (b+1)*K-1, 8*K-2], fill=(245, 245, 245, 230))
+    d.polygon([(7*K+K//2, 5*K), (9*K, 7*K+K//2),
+               (7*K+K//2, 10*K), (6*K, 7*K+K//2)],
+              fill=(64, 224, 208, 235), outline=(10, 70, 66, 255))
+    d.rectangle([7*K+1, 7*K+1, 8*K-2, 8*K-2], fill=(255, 215, 90, 255))
+    ch.save(os.path.join(hud, "crosshair.png"), optimize=True)
+    # --- نوار تجربه 182x5
+    xb = Image.new("RGBA", (182 * HUD_K, 5 * HUD_K), (0, 0, 0, 0))
+    d = ImageDraw.Draw(xb)
+    d.rectangle([0, 0, 182*HUD_K-1, 5*HUD_K-1], fill=(14, 18, 26, 210),
+                outline=GOLD_D + (255,), width=HUD_K//2)
+    xb.save(os.path.join(hud, "experience_bar_background.png"), optimize=True)
+    xp = Image.new("RGBA", (182 * HUD_K, 5 * HUD_K), (0, 0, 0, 0))
+    d = ImageDraw.Draw(xp)
+    d.rectangle([0, 0, 182*HUD_K-1, 5*HUD_K-1], fill=TURQ + (255,))
+    d.rectangle([0, 0, 182*HUD_K-1, 2*HUD_K-1], fill=TURQ_B + (255,))
+    d.rectangle([0, 4*HUD_K, 182*HUD_K-1, 5*HUD_K-1], fill=TURQ_D + (255,))
+    xp.save(os.path.join(hud, "experience_bar_progress.png"), optimize=True)
+    print("[v13] 27 اسپرایت HUD ضد-گلیچ از صفر ترسیم شد ✔")
+
+
 # ==================================== [v8] بازنویسی کامل: PvP Lite — 1.21.11
 LITE_PACK = os.path.join(os.path.dirname(PACK), "PersianLegacyLite")
 LITE_FORMAT = 75          # pack_format رسمی 1.21.11
@@ -1896,16 +2016,16 @@ def build_lite121():
                 shrunk += 1
     # --- ۲) اسپرایت‌های HUD رسمی 1.21.11 (برش از هنر ۴x خودمان)
     hud = os.path.join(ltex, "gui", "sprites", "hud")
-    icons = Image.open(os.path.join(TEX, "gui", "icons.png"))
+    # [v13-FIX] برش از icons.png حذف شد (منبع گلیچ: مختصات بدون هنر).
+    # قلب/غذا/زره/کراس‌هیر/XP را build_hud_sprites از صفر می‌کشد و از
+    # copytree می‌آیند؛ فقط هات‌بار از هنر v9 در widgets برش می‌خورد.
     widgets = Image.open(os.path.join(TEX, "gui", "widgets.png"))
-    sc = icons.width // 256                        # ضریب S واقعی
-    for sheet, table in ((icons, LITE_SPRITES_ICONS),
-                         (widgets, LITE_SPRITES_WIDGETS)):
-        for name, (x, y, w, h) in table.items():
-            crop = sheet.crop((x * sc, y * sc, (x + w) * sc, (y + h) * sc))
-            fp = os.path.join(hud, name + ".png")
-            ensure(os.path.dirname(fp))
-            crop.save(fp, optimize=True)
+    sc = widgets.width // 256                      # ضریب S واقعی
+    for name, (x, y, w, h) in LITE_SPRITES_WIDGETS.items():
+        crop = widgets.crop((x * sc, y * sc, (x + w) * sc, (y + h) * sc))
+        fp = os.path.join(hud, name + ".png")
+        ensure(os.path.dirname(fp))
+        crop.save(fp, optimize=True)
     # --- ۳) لو-فایر (آتش و آتش روح)
     for fn in ("fire_0", "fire_1", "soul_fire_0", "soul_fire_1"):
         p = os.path.join(ltex, "block", fn + ".png")
@@ -1975,6 +2095,53 @@ def build_lite121():
             tpx = tv.convert("RGB").resize((16, 16), Image.BOX)
             tpx = tpx.quantize(colors=16, dither=Image.NONE).convert("RGBA")
             tpx.save(os.path.join(ltex, "block", tgt + ".png"), optimize=True)
+    # --- ۵.۸) [v13] کیمیاگری پارسی: معجون‌ها در شیشه‌ی مرصع (STRICT 16x16)
+    fp13 = os.path.join(SRC, "item", "persian_flacon.png")
+    if os.path.exists(fp13):
+        fl = chroma_key(Image.open(fp13), key="magenta")
+        fb = fl.getbbox()
+        if fb:
+            fl = fl.crop(fb)
+        fs = max(fl.size)
+        fcv = Image.new("RGBA", (fs, fs), (0, 0, 0, 0))
+        fcv.paste(fl, ((fs - fl.width) // 2, (fs - fl.height) // 2), fl)
+        fpx = fcv.resize((16, 16), Image.BOX)
+        fa = np.asarray(fpx).copy()
+        fa[..., 3] = np.where(fa[..., 3] > 110, 255, 0)
+        m = fa[..., 3] == 255
+        inner = (m & np.roll(m, 1, 0) & np.roll(m, -1, 0) &
+                 np.roll(m, 1, 1) & np.roll(m, -1, 1))
+        rows = np.arange(16)[:, None] * np.ones((1, 16), int)
+        interior = inner & (rows >= 8)             # بدنه‌ی پایین شیشه
+        def flacon(liquid=None, glass_alpha=None, band=None):
+            out = fa.copy()
+            if liquid is not None:
+                out[interior, 0], out[interior, 1], out[interior, 2] = liquid
+                out[interior, 3] = 255
+            elif glass_alpha is not None:
+                out[interior, 3] = glass_alpha     # شیشه‌ی شفاف => تینت بازی
+            if band is not None:                   # نوار گردن (splash/linger)
+                br = (rows == 6) & m
+                out[br, 0], out[br, 1], out[br, 2] = band
+            return Image.fromarray(out, "RGBA")
+        itdir = os.path.join(ltex, "item")
+        flacon(glass_alpha=92).save(
+            os.path.join(itdir, "potion.png"), optimize=True)
+        flacon(glass_alpha=92, band=(222, 180, 60)).save(
+            os.path.join(itdir, "splash_potion.png"), optimize=True)
+        flacon(glass_alpha=92, band=(64, 224, 208)).save(
+            os.path.join(itdir, "lingering_potion.png"), optimize=True)
+        ov = np.zeros_like(fa)                     # overlay = مایعِ تینت‌پذیر
+        ov[interior] = (236, 236, 236, 255)
+        Image.fromarray(ov, "RGBA").save(
+            os.path.join(itdir, "potion_overlay.png"), optimize=True)
+        flacon().save(os.path.join(itdir, "glass_bottle.png"), optimize=True)
+        flacon(liquid=(240, 180, 40)).save(        # شربت زعفران
+            os.path.join(itdir, "honey_bottle.png"), optimize=True)
+        flacon(liquid=(80, 220, 170)).save(        # جوهر دانایی
+            os.path.join(itdir, "experience_bottle.png"), optimize=True)
+        flacon(liquid=(240, 150, 190)).save(       # گلاب
+            os.path.join(itdir, "dragon_breath.png"), optimize=True)
     # --- ۵.۷) [v12] کوانتایز بی‌ضرر: فایل‌های ≤۲۵۶ رنگ => پالت ۸بیتی
     qn = 0
     for dp, _, fs in os.walk(ltex):
@@ -2060,6 +2227,7 @@ def main():
         ("نگارگری ایرانی (v10)", build_paintings, ()),
         ("پارسی‌سازی سراسری (v7)", persianize_vanilla, ()),
         ("هات‌بار v9", build_hotbar_v9, ()),
+        ("اسپرایت‌های HUD (v13)", build_hud_sprites, ()),
         ("زبان فارسی", write_lang, ()),
         ("محیط/آسمان", build_environment, ()),
         ("لوگو", build_logo, ()),
