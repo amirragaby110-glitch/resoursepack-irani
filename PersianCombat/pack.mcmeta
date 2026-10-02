@@ -1,0 +1,10 @@
+{
+  "pack": {
+    "pack_format": 75,
+    "supported_formats": {
+      "min_inclusive": 48,
+      "max_inclusive": 99
+    },
+    "description": "§bSHAMSHIR§7 — §6Persian Combat§r §8| 1.21.11 PvP"
+  }
+}
