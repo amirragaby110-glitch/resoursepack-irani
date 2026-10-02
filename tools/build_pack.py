@@ -1256,6 +1256,33 @@ V7_SPECIAL = {
 }
 
 
+# ===================== [v12] کاشی شاه‌عباسی => خانواده کاشی لعاب‌دار
+TILE_FAMILY = {   # هدف => ops روی منبع فیروزه
+    "cyan_glazed_terracotta": None,
+    "light_blue_glazed_terracotta": dict(val=1.12, sat=0.92),
+    "blue_glazed_terracotta": dict(hue=0.08, val=0.9),
+    "red_glazed_terracotta": dict(hue=0.52, sat=1.15, val=0.95),
+    "white_glazed_terracotta": dict(sat=0.35, val=1.3),
+    "yellow_glazed_terracotta": dict(hue=0.62, sat=1.2, val=1.1),
+}
+
+
+def build_tiles_v12(res=256):
+    """کاشی مسجد شاه‌عباسی (AI seamless) => ۶ کاشی لعاب‌دار پک اصلی."""
+    sp = os.path.join(SRC, "block", "shah_abbasi_tile.png")
+    if not os.path.exists(sp):
+        print("[v12] هشدار: shah_abbasi_tile.png نیست — رد شد")
+        return
+    base = Image.open(sp).convert("RGB")
+    base = ImageOps.fit(base, (res, res), Image.LANCZOS)
+    base = make_seamless(base)
+    blk = os.path.join(TEX, "block")
+    for tgt, ops in TILE_FAMILY.items():
+        out = adjust(base, **ops) if ops else base.convert("RGBA")
+        save_png(out, os.path.join(blk, tgt + ".png"))
+    print(f"[v12] {len(TILE_FAMILY)} کاشی لعاب‌دار شاه‌عباسی ساخته شد ✔")
+
+
 # ============================ [v10] تابلوهای نگارگری ایرانی (AI paintings)
 def build_paintings():
     """۱۰ تابلوی وانیلا => مینیاتور/نگارگری ایرانی. اندازه از فایل وانیلا
@@ -1807,8 +1834,10 @@ def build_hotbar_v9():
 LITE_PACK = os.path.join(os.path.dirname(PACK), "PersianLegacyLite")
 LITE_FORMAT = 75          # pack_format رسمی 1.21.11
 # سقف رزولوشن هر دسته در نسخه‌ی سبک (FPS-boost)
-LITE_MAXRES = {"block": 128, "item": 256, "particle": 128, "entity": 256,
-               "environment": 512, "gui": 512, "misc": 256, "models": 256}
+LITE_MAXRES = {  # [v12] رژیم FPS++ : نصفِ قبلی در همه‌ی دسته‌های سنگین
+    "block": 64, "item": 128, "particle": 64, "entity": 128,
+    "environment": 256, "gui": 512, "misc": 128, "models": 128,
+    "painting": 256, "mob_effect": 64, "map": 128}
 # برش HUD قدیمی (icons/widgets ×S) => اسپرایت‌های 1.20.2+ (نام‌های رسمی 1.21.11)
 LITE_SPRITES_ICONS = {
     "crosshair": (0, 0, 15, 15),
@@ -1935,6 +1964,42 @@ def build_lite121():
         dark[..., 2] = np.clip(dark[..., 2] * 1.25, 0, 255)  # ته‌رنگ تیل
         Image.fromarray(dark.astype(np.uint8), "RGBA").save(
             os.path.join(ltex, "item", "netherite_sword.png"), optimize=True)
+    # --- ۵.۶) [v12] کاشی شاه‌عباسی پیکسلی 16x16 سخت (SEAMLESS_TILING)
+    tp12 = os.path.join(SRC, "block", "shah_abbasi_tile.png")
+    if os.path.exists(tp12):
+        tb = Image.open(tp12).convert("RGB")
+        tb = ImageOps.fit(tb, (256, 256), Image.LANCZOS)
+        tb = make_seamless(tb)
+        for tgt, ops in TILE_FAMILY.items():
+            tv = adjust(tb, **ops) if ops else tb.convert("RGBA")
+            tpx = tv.convert("RGB").resize((16, 16), Image.BOX)
+            tpx = tpx.quantize(colors=16, dither=Image.NONE).convert("RGBA")
+            tpx.save(os.path.join(ltex, "block", tgt + ".png"), optimize=True)
+    # --- ۵.۷) [v12] کوانتایز بی‌ضرر: فایل‌های ≤۲۵۶ رنگ => پالت ۸بیتی
+    qn = 0
+    for dp, _, fs in os.walk(ltex):
+        for f in fs:
+            if not f.endswith(".png"):
+                continue
+            p = os.path.join(dp, f)
+            try:
+                im = Image.open(p)
+                if im.mode == "P":
+                    continue
+                im = im.convert("RGBA")
+                if im.getcolors(256) is None:      # بیش از ۲۵۶ رنگ => دست نزن
+                    continue
+                before = os.path.getsize(p)
+                q = im.quantize(colors=256, method=Image.FASTOCTREE,
+                                dither=Image.NONE)
+                q.save(p, optimize=True)
+                if os.path.getsize(p) >= before:   # اگر بزرگ‌تر شد، برگردان
+                    im.save(p, optimize=True)
+                else:
+                    qn += 1
+            except Exception:
+                pass
+    print(f"[v12] کوانتایز بی‌ضرر: {qn} فایل ۸بیتی شد (FPS/Load بهتر)")
     # --- ۶) pack.mcmeta مخصوص 1.21.11
     meta = {"pack": {
         "pack_format": LITE_FORMAT,
@@ -1991,6 +2056,7 @@ def main():
         ("زره و پروژکتایل", build_armor, ()),
         ("بچ 8K (v6)", build_v6, ()),
         ("موتور رویه‌ای", procedural_fill, ()),
+        ("کاشی شاه‌عباسی (v12)", build_tiles_v12, ()),
         ("نگارگری ایرانی (v10)", build_paintings, ()),
         ("پارسی‌سازی سراسری (v7)", persianize_vanilla, ()),
         ("هات‌بار v9", build_hotbar_v9, ()),
