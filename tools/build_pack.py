@@ -1205,7 +1205,10 @@ PROC_REGISTRY = {
 
 
 # ==================================== [v7] پارسی‌سازی سراسری وانیلا (پوشش کامل)
-VANILLA_TEX = "/tmp/mcmeta/assets/minecraft/textures"
+# [v14] منبع ترجیحی: 1.21.11 (شامل Copper Age/Trial/Pale Oak و ~۱۱۰۰ فایل جدید)
+VANILLA_TEX = ("/tmp/mc121/assets/minecraft/textures"
+               if os.path.isdir("/tmp/mc121/assets/minecraft/textures")
+               else "/tmp/mcmeta/assets/minecraft/textures")
 V7_SKIP_TOP = {"colormap", "gui", "realms", "font"}   # مال خودمان / بی‌اثر
 # رنگ‌های اختصاصی موب‌ها و افکت‌های شاخص (زیرمسیر => ops برای adjust)
 V7_SPECIAL = {
@@ -1830,6 +1833,129 @@ def build_hotbar_v9():
     print("[v9] هات‌بار گره‌چینی + سلکتور فیروزه + آفهند نوشته شد ✔")
 
 
+# ===================== [v14] زره Equipment (1.21.2+) + مس + اورهای کامل
+EQUIP_MAP = {   # material => (layer_1, layer_2)
+    "chainmail": ("chainmail_layer_1", "chainmail_layer_2"),
+    "diamond": ("diamond_layer_1", "diamond_layer_2"),
+    "gold": ("gold_layer_1", "gold_layer_2"),
+    "iron": ("iron_layer_1", "iron_layer_2"),
+    "netherite": ("netherite_layer_1", "netherite_layer_2"),
+    "leather": ("leather_layer_1", "leather_layer_2"),
+    "turtle_scute": ("turtle_layer_1", None),
+}
+COPPER_TINT = dict(force_hue=0.045, sat=1.3, val=0.98)   # آیکون: فیروزه => مس
+COPPER_LAYER_TINT = dict(tint=(201, 118, 74))            # لایه خاکستری => مس
+
+
+def build_armor_equipment():
+    """[v14-FIX گلیچ اصلی] از 1.21.2 زره تنی از entity/equipment/humanoid
+    خوانده می‌شود نه models/armor — لایه‌های پارسی به مسیر جدید + تولید
+    کامل ست مسی (Copper Age 1.21.9+)."""
+    arm = os.path.join(TEX, "models", "armor")
+    eq_h = os.path.join(TEX, "entity", "equipment", "humanoid")
+    eq_l = os.path.join(TEX, "entity", "equipment", "humanoid_leggings")
+    ensure(eq_h)
+    ensure(eq_l)
+    n = 0
+    # --- ۱) ست مسی از لایه‌های آهنی (بازرنگ UV-safe)
+    for ln in ("iron_layer_1", "iron_layer_2"):
+        sp = os.path.join(arm, ln + ".png")
+        if os.path.exists(sp):
+            cu = adjust(Image.open(sp), **COPPER_LAYER_TINT)
+            save_png(cu, os.path.join(arm,
+                                      ln.replace("iron", "copper") + ".png"))
+            n += 1
+    EQUIP_MAP["copper"] = ("copper_layer_1", "copper_layer_2")
+    # --- ۲) انتقال همه‌ی لایه‌ها به مسیر Equipment جدید
+    for mat, (l1, l2) in EQUIP_MAP.items():
+        p1 = os.path.join(arm, l1 + ".png")
+        if os.path.exists(p1):
+            shutil.copy2(p1, os.path.join(eq_h, mat + ".png"))
+            n += 1
+        if l2:
+            p2 = os.path.join(arm, l2 + ".png")
+            if os.path.exists(p2):
+                shutil.copy2(p2, os.path.join(eq_l, mat + ".png"))
+                n += 1
+    # چرم: اورلی رنگ‌پذیر
+    for src_n, dst_dir in (("leather_layer_1_overlay", eq_h),
+                           ("leather_layer_2_overlay", eq_l)):
+        sp = os.path.join(arm, src_n + ".png")
+        if os.path.exists(sp):
+            shutil.copy2(sp, os.path.join(dst_dir, "leather_overlay.png"))
+            n += 1
+    # --- ۳) آیکون‌های زره مسی از آیکون‌های الماسی
+    itm = os.path.join(TEX, "item")
+    for piece in ("helmet", "chestplate", "leggings", "boots"):
+        sp = os.path.join(itm, "diamond_" + piece + ".png")
+        if os.path.exists(sp):
+            cu = adjust(Image.open(sp), **COPPER_TINT)
+            save_png(cu, os.path.join(itm, "copper_" + piece + ".png"))
+            n += 1
+    print(f"[v14] زره Equipment 1.21 + ست کامل مسی: {n} فایل ✔")
+
+
+def build_more_ores():
+    """[v14] اورهای جامانده: ۸ دیپ‌اسلیت + اورهای ندر + ancient_debris."""
+    blk = os.path.join(TEX, "block")
+    n = 0
+    for ore in ("coal", "iron", "copper", "gold", "redstone",
+                "emerald", "lapis", "diamond"):
+        sp = os.path.join(blk, ore + "_ore.png")
+        if not os.path.exists(sp):
+            continue
+        dark = adjust(Image.open(sp), sat=1.08, val=0.50)
+        save_png(dark, os.path.join(blk, f"deepslate_{ore}_ore.png"))
+        n += 1
+    def redden(img, mul=(1.18, 0.60, 0.50)):
+        a = np.asarray(img.convert("RGBA")).astype(np.float32)
+        a[..., 0] *= mul[0]
+        a[..., 1] *= mul[1]
+        a[..., 2] *= mul[2]
+        return Image.fromarray(np.clip(a, 0, 255).astype(np.uint8), "RGBA")
+    gp = os.path.join(blk, "gold_ore.png")
+    if os.path.exists(gp):
+        save_png(redden(Image.open(gp)),
+                 os.path.join(blk, "nether_gold_ore.png"))
+        n += 1
+    dp = os.path.join(blk, "diamond_ore.png")
+    if os.path.exists(dp):
+        q = adjust(Image.open(dp), sat=0.25, val=1.1)
+        save_png(redden(q), os.path.join(blk, "nether_quartz_ore.png"))
+        n += 1
+    rp = os.path.join(blk, "raw_iron_block.png")
+    if os.path.exists(rp):
+        deb = adjust(Image.open(rp), tint=(128, 92, 74))
+        save_png(deb, os.path.join(blk, "ancient_debris_side.png"))
+        save_png(adjust(deb, val=0.9),
+                 os.path.join(blk, "ancient_debris_top.png"))
+        n += 2
+    print(f"[v14] اورهای تکمیلی: {n} تکسچر ✔")
+
+
+def build_weapon_states():
+    """[v14-FIX] تکسچرهای «حین استفاده»: فریم‌های کشیدن کمان و کراسبو —
+    دیگر وسط شلیک، دیفالت دیده نمی‌شود."""
+    itm = os.path.join(TEX, "item")
+    van_it = os.path.join(VANILLA_TEX, "item")
+    n = 0
+    targets = ["bow_pulling_0", "bow_pulling_1", "bow_pulling_2",
+               "crossbow_standby", "crossbow_pulling_0",
+               "crossbow_pulling_1", "crossbow_pulling_2",
+               "crossbow_arrow", "crossbow_firework",
+               "fishing_rod", "fishing_rod_cast", "spyglass",
+               "spear", "copper_spear", "copper_spear_in_hand"]
+    for t in targets:
+        vp = os.path.join(van_it, t + ".png")
+        if not os.path.exists(vp):
+            continue
+        img = pixel_grade(Image.open(vp), 1.0)
+        img = adjust(img, hue=0.015, sat=1.3, val=1.04)   # گردو + طلای گرم
+        img.save(os.path.join(itm, t + ".png"), optimize=True)
+        n += 1
+    print(f"[v14] تکسچرهای حین استفاده (کمان/کراسبو/...): {n} فایل ✔")
+
+
 # ===================== [v13] اسپرایت‌های HUD برنامه‌ای (فیکس گلیچ 1.21)
 HUD_K = 6                       # هر پیکسل منطقی = 6 پیکسل واقعی
 
@@ -2221,6 +2347,9 @@ def main():
         ("Fallback", build_fallbacks, ()),
         ("آب متحرک", build_water, ()),
         ("زره و پروژکتایل", build_armor, ()),
+        ("زره Equipment + مس (v14)", build_armor_equipment, ()),
+        ("اورهای تکمیلی (v14)", build_more_ores, ()),
+        ("تکسچرهای حین استفاده (v14)", build_weapon_states, ()),
         ("بچ 8K (v6)", build_v6, ()),
         ("موتور رویه‌ای", procedural_fill, ()),
         ("کاشی شاه‌عباسی (v12)", build_tiles_v12, ()),
